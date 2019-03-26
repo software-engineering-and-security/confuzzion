@@ -19,7 +19,7 @@ public class Confuzzion {
         RandomGenerator rand = new RandomGenerator();
         for (int i = 0; i < 30; i++) {
             Mutant mut = new Mutant();
-            mut.mutate(rand);
+            mut.generate(rand);
             mut.toStdOut();
             Class<?> clazz = mut.toClass(mut.getSootClass());
             try {

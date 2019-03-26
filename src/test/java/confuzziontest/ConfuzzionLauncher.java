@@ -1,5 +1,6 @@
 package confuzziontest;
 
+import com.github.aztorius.confuzzion.GenerationResult;
 import com.github.aztorius.confuzzion.Mutant;
 
 import com.pholser.junit.quickcheck.From;
@@ -14,21 +15,23 @@ import java.lang.NoSuchMethodException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import static org.junit.Assume.*;
+import org.junit.Assume;
 
 @RunWith(JQF.class)
 public class ConfuzzionLauncher {
     @Fuzz
-    public void fuzz(@From(ConfuzzionGenerator.class) Mutant mut) {
-        Boolean bb = true;
-        Class<?> clazz = mut.toClass(mut.getSootClass());
+    public void fuzz(@From(ConfuzzionGenerator.class) GenerationResult res) {
         try {
-            //Method method = clazz.getMethod("Test");
-            //method.invoke(clazz.newInstance());
+            Mutant mut = res.getMutant();
+            Class<?> clazz = mut.toClass(mut.getSootClass());
+            if (clazz == null) {
+                throw new IllegalAccessException();
+            }
             clazz.newInstance();
-        } catch(IllegalAccessException|InstantiationException e) {
-            bb = false;
+        } catch (IllegalAccessException|InstantiationException e) {
+            Assume.assumeNoException(e);
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
-        assumeTrue(bb);
     }
 }
