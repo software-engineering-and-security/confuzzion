@@ -34,6 +34,7 @@ public class Mutant {
 
     private static int MAX_FIELDS = 20;
     private static int MAX_METHODS = 20;
+    private static int MAX_PARAMETERS = 3;
 
     public Mutant() {
         counter = 0;
@@ -91,8 +92,14 @@ public class Mutant {
 
     private void genMethod(RandomGenerator rand) {
         String name = "method" + this.nextInt();
-        //TODO: random parameters
+
+        //TODO: add random object type as parameters
         ArrayList<Type> parameterTypes = new ArrayList<Type>();
+        int numParams = rand.nextUint() % this.MAX_PARAMETERS;
+        for (int i = 0; i < numParams; i++) {
+            parameterTypes.add(rand.randType(false));
+        }
+
         Type returnType = rand.randType(true);
         int modifiers = rand.randModifiers(true);
         //TODO: random (or not) exceptions thrown ?
@@ -103,10 +110,11 @@ public class Mutant {
         method.setActiveBody(body);
         sClass.addMethod(method);
 
-        this.genBody(rand, body, returnType, (modifiers & Modifier.STATIC) > 0);
+        this.genBody(rand, body, returnType, parameterTypes, (modifiers & Modifier.STATIC) > 0);
     }
 
-    private void genBody(RandomGenerator rand, JimpleBody body, Type returnType, Boolean isStatic) {
+    private void genBody(RandomGenerator rand,
+        JimpleBody body, Type returnType, ArrayList<Type> params, Boolean isStatic) {
         Chain<Local> locals = body.getLocals();
         UnitPatchingChain units = body.getUnits();
 
@@ -115,6 +123,12 @@ public class Mutant {
             Local thisLocal = Jimple.v().newLocal("this", sClass.getType());
             locals.add(thisLocal);
             units.add(Jimple.v().newIdentityStmt(thisLocal, Jimple.v().newThisRef(sClass.getType())));
+        }
+
+        for (int i = 0; i < params.size(); i++) {
+            Local paramLocal = Jimple.v().newLocal("param" + i, params.get(i));
+            locals.add(paramLocal);
+            units.add(Jimple.v().newIdentityStmt(paramLocal, Jimple.v().newParameterRef(params.get(i), i)));
         }
 
         //TODO: random locals

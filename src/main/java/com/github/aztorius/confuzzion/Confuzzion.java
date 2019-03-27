@@ -17,7 +17,7 @@ public class Confuzzion {
 
     public void start() {
         RandomGenerator rand = new RandomGenerator();
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 10; i++) {
             Mutant mut = new Mutant();
             mut.generate(rand);
             mut.toStdOut();
