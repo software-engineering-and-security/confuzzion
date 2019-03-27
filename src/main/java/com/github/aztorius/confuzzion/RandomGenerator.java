@@ -10,6 +10,7 @@ import soot.LongType;
 import soot.Modifier;
 import soot.ShortType;
 import soot.Type;
+import soot.Value;
 import soot.VoidType;
 
 import java.lang.Math;
@@ -58,6 +59,32 @@ public class RandomGenerator {
         }
 
         return i;
+    }
+
+    public Value randConstant(Type type) {
+        Value val = null;
+
+        if (type == BooleanType.v()) {
+            val = soot.jimple.IntConstant.v(this.nextUint() % 2);
+        } else if (type == ByteType.v()) {
+            val = soot.jimple.IntConstant.v(this.nextUint() % 256);
+        } else if (type == CharType.v()) {
+            val = soot.jimple.IntConstant.v(this.nextUint() % 256);
+        } else if (type == DoubleType.v()) {
+            val = soot.jimple.DoubleConstant.v(this.nextDouble());
+        } else if (type == FloatType.v()) {
+            val = soot.jimple.FloatConstant.v(this.nextFloat());
+        } else if (type == IntType.v()) {
+            val = soot.jimple.IntConstant.v(this.nextInt());
+        } else if (type == LongType.v()) {
+            val = soot.jimple.LongConstant.v(this.nextLong());
+        } else if (type == ShortType.v()) {
+            val = soot.jimple.IntConstant.v(this.nextInt());
+        } else {
+            //TODO: not a primitive type and not in a local
+        }
+
+        return val;
     }
 
     public Type randPrimType() {

@@ -35,6 +35,7 @@ public class Mutant {
     private static int MAX_FIELDS = 20;
     private static int MAX_METHODS = 20;
     private static int MAX_PARAMETERS = 3;
+    private static int MAX_STATEMENTS = 20;
 
     public Mutant() {
         counter = 0;
@@ -75,10 +76,19 @@ public class Mutant {
         body.getUnits().add(Jimple.v().newIdentityStmt(r0, Jimple.v().newThisRef(sClass.getType())));
         //Add specialinvoke r0.<java.lang.Object: void <init>()>(); statement
         body.getUnits().add(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(r0, Scene.v().getSootClass("java.lang.Object").getMethod("<init>", new ArrayList<Type>()).makeRef())));
+        //Initialize some fields
+        for (SootField field: sClass.getFields()) {
+            if (!field.isStatic()) {
+                //TODO: don't call rand if not necessary
+                Value val = rand.randConstant(field.getType());
+                if (val != null) {
+                    body.getUnits().add(Jimple.v().newAssignStmt(Jimple.v().newInstanceFieldRef(r0, field.makeRef()), val));
+                }
+            }
+        }
         //Add return; statement
         body.getUnits().add(Jimple.v().newReturnVoidStmt());
 
-        //TODO: assign values to each static variables
         //Add initializer of static fields <clinit>
         name = "<clinit>";
         modifiers = Modifier.STATIC | Modifier.PUBLIC;
@@ -86,6 +96,17 @@ public class Mutant {
         body = Jimple.v().newBody(method);
         method.setActiveBody(body);
         sClass.addMethod(method);
+        //TODO: assign values to each static variables, even objects
+        //Initialize some static fields
+        for (SootField field: sClass.getFields()) {
+            if (field.isStatic()) {
+                //TODO: don't call rand if not necessary
+                Value val = rand.randConstant(field.getType());
+                if (val != null) {
+                    body.getUnits().add(Jimple.v().newAssignStmt(Jimple.v().newStaticFieldRef(field.makeRef()), val));
+                }
+            }
+        }
         //Add return; statement
         body.getUnits().add(Jimple.v().newReturnVoidStmt());
     }
@@ -131,8 +152,22 @@ public class Mutant {
             units.add(Jimple.v().newIdentityStmt(paramLocal, Jimple.v().newParameterRef(params.get(i), i)));
         }
 
-        //TODO: random locals
-        //TODO: random statements
+        //TODO: random statements (try catch if necessary)
+        int nbStatements = rand.nextUint() % this.MAX_STATEMENTS;
+        for (int i = 0; i < nbStatements; i++) {
+            switch (rand.nextUint() % 4) {
+                case 0: //Constructor call
+                    //TODO: Local loc = Jimple.v().newlocal("local" + i, Type);
+                    break;
+                case 1: //Method call on a local
+                    break;
+                case 2: //Method call on this
+                    break;
+                default: //Cast
+                    //TODO: Jimple.v().newCastExpr(Value, Type);
+                    break;
+            }
+        }
 
         if (returnType == VoidType.v()) {
             //Add return; statement
@@ -146,25 +181,7 @@ public class Mutant {
             }
 
             if (val == null) {
-                if (returnType == soot.BooleanType.v()) {
-                    val = soot.jimple.IntConstant.v(rand.nextUint() % 2);
-                } else if (returnType == soot.ByteType.v()) {
-                    val = soot.jimple.IntConstant.v(rand.nextUint() % 256);
-                } else if (returnType == soot.CharType.v()) {
-                    val = soot.jimple.IntConstant.v(rand.nextUint() % 256);
-                } else if (returnType == soot.DoubleType.v()) {
-                    val = soot.jimple.DoubleConstant.v(rand.nextDouble());
-                } else if (returnType == soot.FloatType.v()) {
-                    val = soot.jimple.FloatConstant.v(rand.nextFloat());
-                } else if (returnType == soot.IntType.v()) {
-                    val = soot.jimple.IntConstant.v(rand.nextInt());
-                } else if (returnType == soot.LongType.v()) {
-                    val = soot.jimple.LongConstant.v(rand.nextLong());
-                } else if (returnType == soot.ShortType.v()) {
-                    val = soot.jimple.IntConstant.v(rand.nextInt());
-                } else {
-                    //TODO: not a primitive type and not in a local
-                }
+                val = rand.randConstant(returnType);
             }
 
             units.add(Jimple.v().newReturnStmt(val));
