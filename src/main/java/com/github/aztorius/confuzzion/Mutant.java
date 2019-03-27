@@ -138,26 +138,33 @@ public class Mutant {
             //Add return; statement
             units.add(Jimple.v().newReturnVoidStmt());
         } else {
-            //TODO: can use locals instead of constants
             Value val = null;
-            if (returnType == soot.BooleanType.v()) {
-                val = soot.jimple.IntConstant.v(rand.nextUint() % 2);
-            } else if (returnType == soot.ByteType.v()) {
-                val = soot.jimple.IntConstant.v(rand.nextUint() % 256);
-            } else if (returnType == soot.CharType.v()) {
-                val = soot.jimple.IntConstant.v(rand.nextUint() % 256);
-            } else if (returnType == soot.DoubleType.v()) {
-                val = soot.jimple.DoubleConstant.v(rand.nextDouble());
-            } else if (returnType == soot.FloatType.v()) {
-                val = soot.jimple.FloatConstant.v(rand.nextFloat());
-            } else if (returnType == soot.IntType.v()) {
-                val = soot.jimple.IntConstant.v(rand.nextInt());
-            } else if (returnType == soot.LongType.v()) {
-                val = soot.jimple.LongConstant.v(rand.nextLong());
-            } else if (returnType == soot.ShortType.v()) {
-                val = soot.jimple.IntConstant.v(rand.nextInt());
-            } else {
-                //TODO: not a primitive type
+            for (Local loc : locals) {
+                if (loc.getType() == returnType) {
+                    val = loc;
+                }
+            }
+
+            if (val == null) {
+                if (returnType == soot.BooleanType.v()) {
+                    val = soot.jimple.IntConstant.v(rand.nextUint() % 2);
+                } else if (returnType == soot.ByteType.v()) {
+                    val = soot.jimple.IntConstant.v(rand.nextUint() % 256);
+                } else if (returnType == soot.CharType.v()) {
+                    val = soot.jimple.IntConstant.v(rand.nextUint() % 256);
+                } else if (returnType == soot.DoubleType.v()) {
+                    val = soot.jimple.DoubleConstant.v(rand.nextDouble());
+                } else if (returnType == soot.FloatType.v()) {
+                    val = soot.jimple.FloatConstant.v(rand.nextFloat());
+                } else if (returnType == soot.IntType.v()) {
+                    val = soot.jimple.IntConstant.v(rand.nextInt());
+                } else if (returnType == soot.LongType.v()) {
+                    val = soot.jimple.LongConstant.v(rand.nextLong());
+                } else if (returnType == soot.ShortType.v()) {
+                    val = soot.jimple.IntConstant.v(rand.nextInt());
+                } else {
+                    //TODO: not a primitive type and not in a local
+                }
             }
 
             units.add(Jimple.v().newReturnStmt(val));
