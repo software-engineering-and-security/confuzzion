@@ -226,12 +226,16 @@ public class Mutant {
             return loc;
         }
 
+        if (!clazz.isConcrete()) {
+            //TODO: find another class that implements this abstract class or interface
+            System.out.println("DEBUG: GEN: " + clazz.getName() + " is not concrete");
+            return null;
+        }
+
         ArrayList<SootMethod> constructors = new ArrayList<SootMethod>();
         for (SootMethod method : clazz.getMethods()) {
             if (method.isConstructor() && method.isPublic()) {
                 constructors.add(method);
-            } else if (method.isConstructor()) {
-                System.out.println(method.toString());
             }
         }
         if (constructors.size() == 0) {
