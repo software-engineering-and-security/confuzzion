@@ -2,6 +2,7 @@ package com.github.aztorius.confuzzion;
 
 import soot.Local;
 import soot.Modifier;
+import soot.PrimType;
 import soot.Printer;
 import soot.Scene;
 import soot.SootClass;
@@ -26,6 +27,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Mutant {
@@ -160,14 +162,20 @@ public class Mutant {
                     //TODO: Local loc = Jimple.v().newlocal("local" + i, Type);
                     break;
                 case 1: //Method call on a local
+                    //TODO: Jimple.v().newInvokeStmt();
                     break;
                 case 2: //Method call on this
+                    //TODO: Jimple.v().newInvokeStmt();
                     break;
                 default: //Cast
                     //TODO: Jimple.v().newCastExpr(Value, Type);
                     break;
             }
         }
+
+        //TODO: remove
+        this.genObject(rand, body, "java.io.ByteArrayOutputStream");
+        this.genObject(rand, body, "java.util.concurrent.ThreadPoolExecutor");
 
         if (returnType == VoidType.v()) {
             //Add return; statement
@@ -186,6 +194,97 @@ public class Mutant {
 
             units.add(Jimple.v().newReturnStmt(val));
         }
+    }
+
+    private Local genObject(RandomGenerator rand, JimpleBody body, String strObj) {
+        Chain<Local> locals = body.getLocals();
+        UnitPatchingChain units = body.getUnits();
+
+        Scene.v().loadClassAndSupport(strObj);
+
+        SootClass clazz = Scene.v().getSootClass(strObj);
+        if (!clazz.isPublic()) {
+            //TODO: debug: cannot built an object of this type
+            System.out.println("DEBUG: GEN: cannot build an object of the type");
+            return null;
+        }
+
+        if (clazz.isEnum()) {
+            int choice = rand.nextUint() % clazz.getFields().size();
+            int i = 0;
+            SootField selectedField = null;
+            for (SootField field : clazz.getFields()) {
+                selectedField = field;
+                if (i == choice) {
+                    break;
+                }
+                i++;
+            }
+            Local loc = Jimple.v().newLocal("local" + this.nextInt(), selectedField.getType());
+            locals.add(loc);
+            units.add(Jimple.v().newAssignStmt(loc, Jimple.v().newStaticFieldRef(selectedField.makeRef())));
+            return loc;
+        }
+
+        ArrayList<SootMethod> constructors = new ArrayList<SootMethod>();
+        for (SootMethod method : clazz.getMethods()) {
+            if (method.isConstructor() && method.isPublic()) {
+                constructors.add(method);
+            } else if (method.isConstructor()) {
+                System.out.println(method.toString());
+            }
+        }
+        if (constructors.size() == 0) {
+            //TODO: debug: no constructors found
+            System.out.println("DEBUG: GEN: no constructors found");
+            return null;
+        }
+        SootMethod constructor = constructors.get(rand.nextUint() % constructors.size());
+        List<Type> parameterTypes = constructor.getParameterTypes();
+        ArrayList<Value> parameters = new ArrayList<Value>();
+        Boolean found = false;
+
+        // Find or generate parameters
+        for (Type param : parameterTypes) {
+            found = false;
+            // Find a local that can meet this type
+            for (Local loc : locals) {
+                if (loc.getType() == param) {
+                    parameters.add(loc);
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                continue;
+            }
+
+            // Create a primitive typed local with a constant
+            if (PrimType.class.isInstance(param)) {
+                Local loc = Jimple.v().newLocal("local" + this.nextInt(), param);
+                locals.add(loc);
+                units.add(Jimple.v().newAssignStmt(loc, rand.randConstant(param)));
+                parameters.add(loc);
+                continue;
+            }
+
+            // Call this method to create another object
+            Local loc = this.genObject(rand, body, param.toString());
+            if (loc == null) {
+                // If a parameter cannot be built
+                return null;
+            }
+            parameters.add(loc);
+        }
+        // Create local
+        Local loc = Jimple.v().newLocal("local" + this.nextInt(), clazz.getType());
+        locals.add(loc);
+        units.add(Jimple.v().newAssignStmt(loc, Jimple.v().newNewExpr(clazz.getType())));
+        // units.add(Jimple.v().newIdentityStmt(loc, Jimple.v().newNewExpr(clazz.getType())));
+        //TODO: call constructor
+        units.add(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(loc, constructor.makeRef(), parameters)));
+
+        return loc;
     }
 
     private void genMethods(RandomGenerator rand) {
@@ -245,8 +344,6 @@ public class Mutant {
             JasminClass jasminClass = new soot.jimple.JasminClass(sClass);
             jasminClass.print(writerOut);
         }
-        //TODO: fix issue where jasmin.main.<clinit> is called multiple times because of this flush()
-        //TODO: fix issue where jasmin.Main could not initialize and throws NoClassDefFoundError
         writerOut.flush();
         byte[] classContent = stream.toByteArray();
         try {

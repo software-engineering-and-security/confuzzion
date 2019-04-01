@@ -82,6 +82,7 @@ public class RandomGenerator {
             val = soot.jimple.IntConstant.v(this.nextInt());
         } else {
             //TODO: not a primitive type and not in a local
+            System.out.println("DEBUG: RG: Not a primitive type for constant generation");
         }
 
         return val;
