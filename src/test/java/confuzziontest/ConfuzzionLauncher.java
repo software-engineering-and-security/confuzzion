@@ -2,6 +2,7 @@ package confuzziontest;
 
 import com.github.aztorius.confuzzion.GenerationResult;
 import com.github.aztorius.confuzzion.Mutant;
+import com.github.aztorius.confuzzion.RandomGenerator;
 
 import com.pholser.junit.quickcheck.From;
 import edu.berkeley.cs.jqf.fuzz.Fuzz;
@@ -24,14 +25,10 @@ public class ConfuzzionLauncher {
         try {
             Mutant mut = res.getMutant();
             Class<?> clazz = mut.toClass(mut.getSootClass());
-            if (clazz == null) {
-                throw new IllegalAccessException();
-            }
+            Assume.assumeNotNull(clazz);
             clazz.newInstance();
         } catch (IllegalAccessException|InstantiationException e) {
             Assume.assumeNoException(e);
-        } catch (Throwable e) {
-            e.printStackTrace();
         }
     }
 }
