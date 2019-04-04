@@ -248,8 +248,9 @@ public class Mutant {
                             }
                             int methodSel = rand.nextUint(methods.size());
                             SootMethod method = methods.get(methodSel);
-                            if (method.isConstructor()) {
+                            if (method.isConstructor() || !method.isPublic()) {
                                 // We should not call the constructor twice !
+                                // nor call a non-Public method
                                 break;
                             }
 
