@@ -35,6 +35,10 @@ public class RandomGenerator {
         return Math.abs(rand.nextInt());
     }
 
+    public int nextUint(int maxLimit) {
+        return this.nextUint() % maxLimit;
+    }
+
     public float nextFloat() {
         return rand.nextFloat();
     }
@@ -100,7 +104,7 @@ public class RandomGenerator {
             ShortType.v()
         };
 
-        return types[Math.abs(rand.nextInt()) % types.length];
+        return types[this.nextUint() % types.length];
     }
 
     public Type randType(Boolean canBeVoid) {

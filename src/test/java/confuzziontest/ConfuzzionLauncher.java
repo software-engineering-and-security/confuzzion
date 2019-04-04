@@ -29,6 +29,8 @@ public class ConfuzzionLauncher {
             clazz.newInstance();
         } catch (IllegalAccessException|InstantiationException e) {
             Assume.assumeNoException(e);
-        }
+        } // catch (Throwable e) {
+        //     e.printStackTrace();
+        // }
     }
 }

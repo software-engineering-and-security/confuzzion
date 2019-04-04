@@ -1,9 +1,11 @@
 package com.github.aztorius.confuzzion;
 
+import soot.ArrayType;
 import soot.Local;
 import soot.Modifier;
 import soot.PrimType;
 import soot.Printer;
+import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootField;
@@ -27,20 +29,29 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
 public class Mutant {
     private SootClass sClass;
     private int counter;
+    private ArrayList<String> strClasses;
+    private HashMap<String, String> childMap;
 
     private static int MAX_FIELDS = 20;
     private static int MAX_METHODS = 20;
     private static int MAX_PARAMETERS = 3;
-    private static int MAX_STATEMENTS = 20;
+    private static int MAX_STATEMENTS = 10;
 
     public Mutant() {
         counter = 0;
+        strClasses = new ArrayList<String>();
+        strClasses.add("java.io.ByteArrayOutputStream");
+        strClasses.add("java.util.concurrent.ForkJoinPool");
+        childMap = new HashMap<String, String>();
+        childMap.put("java.util.concurrent.BlockingQueue",
+                     "java.util.concurrent.ArrayBlockingQueue");
     }
 
     public SootClass getSootClass() {
@@ -136,6 +147,59 @@ public class Mutant {
         this.genBody(rand, body, returnType, parameterTypes, (modifiers & Modifier.STATIC) > 0);
     }
 
+    // Generate or find parameters for the specified method call with the local
+    private void genMethodCall(RandomGenerator rand, JimpleBody body,
+        Local local, SootMethod method) {
+        Chain<Local> locals = body.getLocals();
+        UnitPatchingChain units = body.getUnits();
+
+        // Generate parameters
+        List<Type> parameterTypes = method.getParameterTypes();
+        ArrayList<Value> parameters = new ArrayList<Value>();
+        Boolean found = false;
+        for (Type paramType : parameterTypes) {
+            for (Local loc : locals) {
+                if (loc.getType() == paramType) {
+                    found = true;
+                    parameters.add(loc);
+                    break;
+                }
+            }
+            if (found) {
+                found = false;
+                continue;
+            }
+            Value locParam = null;
+            if (soot.PrimType.class.isInstance(paramType)) {
+                // paramType is a Primitive Type
+                locParam = rand.randConstant(paramType);
+            } else if (soot.ArrayType.class.isInstance(paramType)) {
+                // paramType is an Array Type
+                //TODO: java.lang.IllegalArgumentException: value may not be null
+                //locParam = ;
+                return;
+            } else {
+                locParam = this.genObject(rand, body, paramType.toString());
+                if (locParam == null) {
+                    // May happen if building the object is
+                    // too difficult. Abort.
+                    //TODO: debug message
+                    return;
+                }
+            }
+            parameters.add(locParam);
+        }
+
+        // Add method call to units
+        if (method.isStatic()) {
+            units.add(Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(method.makeRef(), parameters)));
+        } else if (method.isConstructor()) {
+            units.add(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(local, method.makeRef(), parameters)));
+        } else {
+            units.add(Jimple.v().newInvokeStmt(Jimple.v().newVirtualInvokeExpr(local, method.makeRef(), parameters)));
+        }
+    }
+
     private void genBody(RandomGenerator rand,
         JimpleBody body, Type returnType, ArrayList<Type> params, Boolean isStatic) {
         Chain<Local> locals = body.getLocals();
@@ -154,28 +218,53 @@ public class Mutant {
             units.add(Jimple.v().newIdentityStmt(paramLocal, Jimple.v().newParameterRef(params.get(i), i)));
         }
 
-        //TODO: random statements (try catch if necessary)
-        int nbStatements = rand.nextUint() % this.MAX_STATEMENTS;
+        // Add random statements
+        // TODO: add try catch if necessary
+        int nbStatements = rand.nextUint(this.MAX_STATEMENTS);
         for (int i = 0; i < nbStatements; i++) {
-            switch (rand.nextUint() % 4) {
+            switch (rand.nextUint(3)) {
                 case 0: //Constructor call
-                    //TODO: Local loc = Jimple.v().newlocal("local" + i, Type);
+                    String className = strClasses.get(rand.nextUint(strClasses.size()));
+                    this.genObject(rand, body, className);
                     break;
                 case 1: //Method call on a local
-                    //TODO: Jimple.v().newInvokeStmt();
-                    break;
-                case 2: //Method call on this
-                    //TODO: Jimple.v().newInvokeStmt();
-                    break;
+                    if (locals.size() > 0) {
+                        Local locSel = null;
+                        int localSel = rand.nextUint(locals.size());
+                        for (Local loc : locals) {
+                            if (localSel > 0) {
+                                localSel--;
+                            } else {
+                                locSel = loc;
+                                break;
+                            }
+                        }
+                        Type type = locSel.getType();
+                        if (type instanceof RefType) {
+                            RefType refType = (RefType)type;
+                            List<SootMethod> methods = refType.getSootClass().getMethods();
+                            if (methods.size() == 0) {
+                                break;
+                            }
+                            int methodSel = rand.nextUint(methods.size());
+                            SootMethod method = methods.get(methodSel);
+                            if (method.isConstructor()) {
+                                // We should not call the constructor twice !
+                                break;
+                            }
+
+                            // Call method
+                            this.genMethodCall(rand, body, locSel, method);
+                        }
+                        // else: cannot call a method on a non-RefType object
+                        break;
+                    }
                 default: //Cast
-                    //TODO: Jimple.v().newCastExpr(Value, Type);
-                    break;
+                    //TODO: units.add(Jimple.v().newCastExpr(Value, Type));
+                    //TODO: random Value/Local and random Type
+                    continue;
             }
         }
-
-        //TODO: remove
-        this.genObject(rand, body, "java.io.ByteArrayOutputStream");
-        this.genObject(rand, body, "java.util.concurrent.ThreadPoolExecutor");
 
         if (returnType == VoidType.v()) {
             //Add return; statement
@@ -205,7 +294,7 @@ public class Mutant {
         SootClass clazz = Scene.v().getSootClass(strObj);
         if (!clazz.isPublic()) {
             //TODO: debug: cannot built an object of this type
-            System.out.println("DEBUG: GEN: cannot build an object of the type");
+            // System.out.println("DEBUG: GEN: cannot build an object of the type");
             return null;
         }
 
@@ -227,8 +316,12 @@ public class Mutant {
         }
 
         if (!clazz.isConcrete()) {
-            //TODO: find another class that implements this abstract class or interface
-            System.out.println("DEBUG: GEN: " + clazz.getName() + " is not concrete");
+            // Find another class that implements this abstract class or interface
+            String child = this.childMap.get(clazz.getName());
+            if (child != null) {
+                return this.genObject(rand, body, child);
+            }
+            // System.out.println("DEBUG: GEN: " + clazz.getName() + " is not concrete");
             return null;
         }
 
@@ -240,7 +333,7 @@ public class Mutant {
         }
         if (constructors.size() == 0) {
             //TODO: debug: no constructors found
-            System.out.println("DEBUG: GEN: no constructors found");
+            // System.out.println("DEBUG: GEN: no constructors found");
             return null;
         }
         SootMethod constructor = constructors.get(rand.nextUint() % constructors.size());
@@ -268,6 +361,13 @@ public class Mutant {
                 Local loc = Jimple.v().newLocal("local" + this.nextInt(), param);
                 locals.add(loc);
                 units.add(Jimple.v().newAssignStmt(loc, rand.randConstant(param)));
+                parameters.add(loc);
+                continue;
+            } else if (ArrayType.class.isInstance(param)) {
+                ArrayType paramAT = (ArrayType)param;
+                Local loc = Jimple.v().newLocal("local" + this.nextInt(), param);
+                locals.add(loc);
+                units.add(Jimple.v().newAssignStmt(loc, Jimple.v().newNewArrayExpr(param, soot.jimple.IntConstant.v(rand.nextUint(100) + 1))));
                 parameters.add(loc);
                 continue;
             }
