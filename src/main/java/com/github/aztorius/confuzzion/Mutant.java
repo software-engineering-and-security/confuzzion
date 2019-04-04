@@ -367,7 +367,7 @@ public class Mutant {
                 ArrayType paramAT = (ArrayType)param;
                 Local loc = Jimple.v().newLocal("local" + this.nextInt(), param);
                 locals.add(loc);
-                units.add(Jimple.v().newAssignStmt(loc, Jimple.v().newNewArrayExpr(param, soot.jimple.IntConstant.v(rand.nextUint(100) + 1))));
+                units.add(Jimple.v().newAssignStmt(loc, Jimple.v().newNewArrayExpr(paramAT.baseType, soot.jimple.IntConstant.v(rand.nextUint(100) + 1))));
                 parameters.add(loc);
                 continue;
             }
