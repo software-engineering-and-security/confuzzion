@@ -23,14 +23,11 @@ public class ConfuzzionLauncher {
     @Fuzz
     public void fuzz(@From(ConfuzzionGenerator.class) GenerationResult res) {
         try {
-            Mutant mut = res.getMutant();
-            Class<?> clazz = mut.toClass(mut.getSootClass());
+            Class<?> clazz = res.getSootClass();
             Assume.assumeNotNull(clazz);
             clazz.newInstance();
         } catch (IllegalAccessException|InstantiationException e) {
             Assume.assumeNoException(e);
-        } // catch (Throwable e) {
-        //     e.printStackTrace();
-        // }
+        }
     }
 }

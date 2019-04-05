@@ -92,10 +92,14 @@ public class Mutant {
         //Initialize some fields
         for (SootField field: sClass.getFields()) {
             if (!field.isStatic()) {
-                //TODO: don't call rand if not necessary
                 Value val = rand.randConstant(field.getType());
                 if (val != null) {
                     body.getUnits().add(Jimple.v().newAssignStmt(Jimple.v().newInstanceFieldRef(r0, field.makeRef()), val));
+                } else {
+                    Local loc = this.genObject(rand, body, field.getType().toString());
+                    if (loc != null) {
+                        body.getUnits().add(Jimple.v().newAssignStmt(Jimple.v().newInstanceFieldRef(r0, field.makeRef()), loc));
+                    }
                 }
             }
         }
@@ -401,8 +405,15 @@ public class Mutant {
 
     private void genField(RandomGenerator rand) {
         String name = "field" + this.nextInt();
-        //TODO: random type can be an object
+        // Type can be a primitive type...
         Type type = rand.randPrimType();
+        // ...or a target object
+        if (rand.nextBoolean()) {
+            String className = strClasses.get(rand.nextUint(strClasses.size()));
+            Scene.v().loadClassAndSupport(className);
+            SootClass clazz = Scene.v().getSootClass(className);
+            type = clazz.getType();
+        }
         int modifiers = rand.randModifiers(true);
         this.sClass.addField(new SootField(name, type, modifiers));
     }
@@ -440,7 +451,7 @@ public class Mutant {
         return fileName;
     }
 
-    public Class<?> toClass(SootClass sClass) {
+    public Class<?> toClass(ByteClassLoader loader, SootClass sClass) {
         String className = sClass.getShortName();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         OutputStream streamOut = new JasminOutputStream(stream);
@@ -457,7 +468,6 @@ public class Mutant {
             e.printStackTrace();
             return null;
         }
-        ByteClassLoader loader = new ByteClassLoader();
         return loader.load(className, classContent);
     }
 

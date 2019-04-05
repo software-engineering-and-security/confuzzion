@@ -1,13 +1,13 @@
 package com.github.aztorius.confuzzion;
 
 public class GenerationResult {
-    private Mutant mut;
+    private Class<?> clazz;
 
-    public GenerationResult(Mutant mut) {
-        this.mut = mut;
+    public GenerationResult(Class<?> clazz) {
+        this.clazz = clazz;
     }
 
-    public Mutant getMutant() {
-        return mut;
+    public Class<?> getSootClass() {
+        return clazz;
     }
 }

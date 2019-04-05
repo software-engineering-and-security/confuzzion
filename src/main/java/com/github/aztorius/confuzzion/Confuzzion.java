@@ -17,11 +17,12 @@ public class Confuzzion {
 
     public void start() {
         RandomGenerator rand = new RandomGenerator();
+        ByteClassLoader loader = new ByteClassLoader();
         for (int i = 0; i < 10; i++) {
             Mutant mut = new Mutant();
             mut.generate(rand);
             mut.toStdOut();
-            Class<?> clazz = mut.toClass(mut.getSootClass());
+            Class<?> clazz = mut.toClass(loader, mut.getSootClass());
             try {
                 //Method method = clazz.getMethod("Test");
                 //method.invoke(clazz.newInstance());

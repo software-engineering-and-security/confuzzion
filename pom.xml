@@ -32,6 +32,13 @@
         <scope>test</scope>
     </dependency>
 
+    <!-- JQF: dependency for janala -->
+    <dependency>
+        <groupId>edu.berkeley.cs.jqf</groupId>
+        <artifactId>jqf-instrument</artifactId>
+        <version>1.1</version>
+    </dependency>
+
     <!-- JUnit-QuickCheck: API to write generators -->
     <dependency>
         <groupId>com.pholser</groupId>
