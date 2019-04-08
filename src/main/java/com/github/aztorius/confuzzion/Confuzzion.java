@@ -17,8 +17,8 @@ public class Confuzzion {
 
     public void start() {
         RandomGenerator rand = new RandomGenerator();
-        ByteClassLoader loader = new ByteClassLoader();
         for (int i = 0; i < 10; i++) {
+            ByteClassLoader loader = new ByteClassLoader();
             Mutant mut = new Mutant();
             mut.generate(rand);
             mut.toStdOut();
