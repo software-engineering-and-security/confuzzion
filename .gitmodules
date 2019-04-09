@@ -1,0 +1,3 @@
+[submodule "jqf"]
+	path = jqf
+	url = https://github.com/rohanpadhye/jqf.git

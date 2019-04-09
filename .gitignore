@@ -1,3 +1,5 @@
-**/*.class
 target/
+fuzz-results
+**/*.class
 *.out
+*.log
