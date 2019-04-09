@@ -388,9 +388,9 @@ public class Mutant {
         // Create local
         Local loc = Jimple.v().newLocal("local" + this.nextInt(), clazz.getType());
         locals.add(loc);
+        // Assign local value
         units.add(Jimple.v().newAssignStmt(loc, Jimple.v().newNewExpr(clazz.getType())));
-        // units.add(Jimple.v().newIdentityStmt(loc, Jimple.v().newNewExpr(clazz.getType())));
-        //TODO: call constructor
+        // Call constructor
         units.add(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(loc, constructor.makeRef(), parameters)));
 
         return loc;
@@ -451,7 +451,7 @@ public class Mutant {
         return fileName;
     }
 
-    public Class<?> toClass(ByteClassLoader loader, SootClass sClass) {
+    public byte[] toClass(SootClass sClass) {
         String className = sClass.getShortName();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         OutputStream streamOut = new JasminOutputStream(stream);
@@ -468,7 +468,7 @@ public class Mutant {
             e.printStackTrace();
             return null;
         }
-        return loader.load(className, classContent);
+        return classContent;
     }
 
     public String toJimple(SootClass sClass) {

@@ -1,13 +1,13 @@
 package com.github.aztorius.confuzzion;
 
 public class GenerationResult {
-    private Class<?> clazz;
+    private byte[] array;
 
-    public GenerationResult(Class<?> clazz) {
-        this.clazz = clazz;
+    public GenerationResult(byte[] array) {
+        this.array = array;
     }
 
-    public Class<?> getSootClass() {
-        return clazz;
+    public byte[] getByteArray() {
+        return this.array;
     }
 }

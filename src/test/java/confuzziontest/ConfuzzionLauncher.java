@@ -1,8 +1,7 @@
 package confuzziontest;
 
+import com.github.aztorius.confuzzion.ByteClassLoader;
 import com.github.aztorius.confuzzion.GenerationResult;
-import com.github.aztorius.confuzzion.Mutant;
-import com.github.aztorius.confuzzion.RandomGenerator;
 
 import com.pholser.junit.quickcheck.From;
 import edu.berkeley.cs.jqf.fuzz.Fuzz;
@@ -23,7 +22,10 @@ public class ConfuzzionLauncher {
     @Fuzz
     public void fuzz(@From(ConfuzzionGenerator.class) GenerationResult res) {
         try {
-            Class<?> clazz = res.getSootClass();
+            byte[] array = res.getByteArray();
+            Assume.assumeNotNull(array);
+            ByteClassLoader loader = new ByteClassLoader();
+            Class<?> clazz = loader.load("Test", array);
             Assume.assumeNotNull(clazz);
             clazz.newInstance();
         } catch (IllegalAccessException|InstantiationException e) {

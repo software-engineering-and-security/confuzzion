@@ -10,12 +10,8 @@ import com.pholser.junit.quickcheck.random.SourceOfRandomness;
 import com.pholser.junit.quickcheck.generator.GenerationStatus;
 
 public class ConfuzzionGenerator extends Generator<GenerationResult> {
-    private ByteClassLoader loader;
-
     public ConfuzzionGenerator() {
         super(GenerationResult.class);
-
-        loader = new ByteClassLoader();
     }
 
     @Override
@@ -23,8 +19,8 @@ public class ConfuzzionGenerator extends Generator<GenerationResult> {
         Mutant mut = new Mutant();
         mut.generate(new RandomGenerator(random.toJDKRandom()));
         try {
-            Class<?> clazz = mut.toClass(this.loader, mut.getSootClass());
-            return new GenerationResult(clazz);
+            byte[] array = mut.toClass(mut.getSootClass());
+            return new GenerationResult(array);
         } catch (Throwable e) {
             //TODO: DEBUG print e
             return new GenerationResult(null);

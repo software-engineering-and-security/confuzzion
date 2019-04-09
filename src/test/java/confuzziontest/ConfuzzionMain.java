@@ -19,11 +19,12 @@ public class ConfuzzionMain {
     public void start() {
         RandomGenerator rand = new RandomGenerator();
         for (int i = 0; i < 10; i++) {
-            ByteClassLoader loader = new ByteClassLoader();
             Mutant mut = new Mutant();
             mut.generate(rand);
             mut.toStdOut();
-            Class<?> clazz = mut.toClass(loader, mut.getSootClass());
+            byte[] array = mut.toClass(mut.getSootClass());
+            ByteClassLoader loader = new ByteClassLoader();
+            Class<?> clazz = loader.load("Test", array);
             try {
                 //Method method = clazz.getMethod("Test");
                 //method.invoke(clazz.newInstance());
