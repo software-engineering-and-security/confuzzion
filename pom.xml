@@ -57,27 +57,6 @@
 
   <build>
       <plugins>
-          <!-- The JQF plugin, for invoking the command `mvn jqf:fuzz` -->
-          <plugin>
-              <groupId>edu.berkeley.cs.jqf</groupId>
-              <artifactId>jqf-maven-plugin</artifactId>
-              <!-- confirm the latest version at: https://mvnrepository.com/artifact/edu.berkeley.cs.jqf -->
-              <version>1.0</version>
-          </plugin>
-
-          <!-- The Exec Maven plugin for invoking the command `mvn exec:java` -->
-          <plugin>
-              <groupId>org.codehaus.mojo</groupId>
-              <artifactId>exec-maven-plugin</artifactId>
-              <version>1.6.0</version>
-              <configuration>
-                  <mainClass>com.github.aztorius.confuzzion.Confuzzion</mainClass>
-                  <arguments>
-                      <argument>arg1</argument>
-                  </arguments>
-              </configuration>
-          </plugin>
-
           <!-- The Maven Assembly plugin to build a jar file -->
           <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
@@ -90,12 +69,10 @@
               </execution>
             </executions>
             <configuration>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
+              <descriptor>src/main/assembly/assembly.xml</descriptor>
               <archive>
                 <manifest>
-                  <mainClass>com.github.aztorius.confuzzion.Confuzzion</mainClass>
+                  <mainClass>confuzziontest.ConfuzzionMain</mainClass>
                 </manifest>
               </archive>
             </configuration>

@@ -1,5 +1,6 @@
-package com.github.aztorius.confuzzion;
+package confuzziontest;
 
+import com.github.aztorius.confuzzion.ByteClassLoader;
 import com.github.aztorius.confuzzion.Mutant;
 import com.github.aztorius.confuzzion.RandomGenerator;
 
@@ -9,9 +10,9 @@ import java.lang.NoSuchMethodException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class Confuzzion {
+public class ConfuzzionMain {
     public static void main(String args[]) {
-        Confuzzion conf = new Confuzzion();
+        ConfuzzionMain conf = new ConfuzzionMain();
         conf.start();
     }
 
