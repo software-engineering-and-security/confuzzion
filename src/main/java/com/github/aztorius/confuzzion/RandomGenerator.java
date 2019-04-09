@@ -36,7 +36,11 @@ public class RandomGenerator {
     }
 
     public int nextUint() {
-        return Math.abs(rand.nextInt());
+        int result = Math.abs(rand.nextInt());
+        if (result < 0) {
+            result = 0;
+        }
+        return result;
     }
 
     public int nextUint(int maxLimit) {

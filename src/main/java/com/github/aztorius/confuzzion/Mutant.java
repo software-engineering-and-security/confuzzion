@@ -341,7 +341,7 @@ public class Mutant {
             // System.out.println("DEBUG: GEN: no constructors found");
             return null;
         }
-        SootMethod constructor = constructors.get(rand.nextUint() % constructors.size());
+        SootMethod constructor = constructors.get(rand.nextUint(constructors.size()));
         List<Type> parameterTypes = constructor.getParameterTypes();
         ArrayList<Value> parameters = new ArrayList<Value>();
         Boolean found = false;
