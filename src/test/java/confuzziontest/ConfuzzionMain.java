@@ -23,10 +23,10 @@ public class ConfuzzionMain {
             mut.generate(rand);
             mut.toStdOut();
             byte[] array = mut.toClass(mut.getSootClass());
-            ByteClassLoader loader = new ByteClassLoader();
+            ByteClassLoader loader = new ByteClassLoader(Thread.currentThread().getContextClassLoader());
             Class<?> clazz = loader.load("Test", array);
             try {
-                //Method method = clazz.getMethod("Test");
+                Method[] methods = clazz.getMethods();
                 //method.invoke(clazz.newInstance());
                 clazz.newInstance();
             } catch(IllegalAccessException|InstantiationException e) {

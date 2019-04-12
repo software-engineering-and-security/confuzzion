@@ -24,7 +24,7 @@ public class ConfuzzionLauncher {
         try {
             byte[] array = res.getByteArray();
             Assume.assumeNotNull(array);
-            ByteClassLoader loader = new ByteClassLoader();
+            ByteClassLoader loader = new ByteClassLoader(Thread.currentThread().getContextClassLoader());
             Class<?> clazz = loader.load("Test", array);
             Assume.assumeNotNull(clazz);
             clazz.newInstance();

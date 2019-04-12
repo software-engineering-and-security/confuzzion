@@ -3,11 +3,17 @@ package com.github.aztorius.confuzzion;
 import java.lang.ClassLoader;
 
 public class ByteClassLoader extends ClassLoader {
-    public ByteClassLoader() {
-        super(Thread.currentThread().getContextClassLoader());
+    public ByteClassLoader(ClassLoader parent) {
+        super(parent);
     }
 
     public Class<?> load(String className, byte[] data) {
-        return this.defineClass(className, data, 0, data.length);
+        try {
+            this.defineClass(className, data, 0, data.length, null);
+            return this.loadClass(className);
+        } catch(ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
