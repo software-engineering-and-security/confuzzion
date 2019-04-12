@@ -23,6 +23,7 @@ import soot.util.Chain;
 import soot.util.JasminOutputStream;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -38,6 +39,7 @@ public class Mutant {
     private int counter;
     private ArrayList<String> strClasses;
     private HashMap<String, String> childMap;
+    private ArrayList<Contract> contracts;
 
     private static int MAX_FIELDS = 20;
     private static int MAX_METHODS = 20;
@@ -52,6 +54,14 @@ public class Mutant {
         childMap = new HashMap<String, String>();
         childMap.put("java.util.concurrent.BlockingQueue",
                      "java.util.concurrent.ArrayBlockingQueue");
+        contracts = new ArrayList<Contract>();
+        contracts.add(new ContractTypeConfusion());
+    }
+
+    private void applyContractsCheckers(JimpleBody body) {
+        for (Contract contract : contracts) {
+            contract.applyCheck(body);
+        }
     }
 
     public SootClass getSootClass() {
@@ -65,6 +75,14 @@ public class Mutant {
 
     private void genClass(RandomGenerator rand) {
         Scene.v().loadClassAndSupport("java.lang.Object");
+        try {
+            // Add JAR path to SootClassPath
+            String path = new File(Mutant.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();
+            Scene.v().extendSootClassPath(path);
+        } catch(java.net.URISyntaxException e) {
+            e.printStackTrace();
+        }
+        Scene.v().loadClassAndSupport("com.github.aztorius.confuzzion.ContractCheckException");
         sClass = new SootClass("Test", Modifier.PUBLIC);
         sClass.setSuperclass(Scene.v().getSootClass("java.lang.Object"));
         Scene.v().addClass(sClass);
@@ -113,15 +131,18 @@ public class Mutant {
         body = Jimple.v().newBody(method);
         method.setActiveBody(body);
         sClass.addMethod(method);
-        //TODO: assign values to each static variables, even objects
+
         //Initialize some static fields
         for (SootField field: sClass.getFields()) {
             if (field.isStatic()) {
                 //TODO: don't call rand if not necessary
+                //TODO: call object constructors
                 Value val = rand.randConstant(field.getType());
-                if (val != null) {
-                    body.getUnits().add(Jimple.v().newAssignStmt(Jimple.v().newStaticFieldRef(field.makeRef()), val));
+                if (val == null) {
+                    // Assign to null if no value available
+                    val = soot.jimple.NullConstant.v();
                 }
+                body.getUnits().add(Jimple.v().newAssignStmt(Jimple.v().newStaticFieldRef(field.makeRef()), val));
             }
         }
         //Add return; statement
@@ -186,9 +207,9 @@ public class Mutant {
                 locParam = this.genObject(rand, body, paramType.toString());
                 if (locParam == null) {
                     // May happen if building the object is
-                    // too difficult. Abort.
-                    //TODO: debug message
-                    return;
+                    // too difficult. Use null.
+                    //TODO: catch IllegalArgumentException
+                    locParam = soot.jimple.NullConstant.v();
                 }
             }
             parameters.add(locParam);
@@ -267,9 +288,12 @@ public class Mutant {
                 default: //Cast
                     //TODO: units.add(Jimple.v().newCastExpr(Value, Type));
                     //TODO: random Value/Local and random Type
+                    //TODO: catch exception if cast should not work
                     continue;
             }
         }
+
+        this.applyContractsCheckers(body);
 
         if (returnType == VoidType.v()) {
             //Add return; statement
@@ -336,11 +360,13 @@ public class Mutant {
                 constructors.add(method);
             }
         }
+
         if (constructors.size() == 0) {
             //TODO: debug: no constructors found
             // System.out.println("DEBUG: GEN: no constructors found");
             return null;
         }
+
         SootMethod constructor = constructors.get(rand.nextUint(constructors.size()));
         List<Type> parameterTypes = constructor.getParameterTypes();
         ArrayList<Value> parameters = new ArrayList<Value>();
@@ -378,10 +404,11 @@ public class Mutant {
             }
 
             // Call this method to create another object
-            Local loc = this.genObject(rand, body, param.toString());
+            Value loc = this.genObject(rand, body, param.toString());
             if (loc == null) {
-                // If a parameter cannot be built
-                return null;
+                // If a parameter cannot be built use a null value.
+                // TODO: catch IllegalArgumentException
+                loc = soot.jimple.NullConstant.v();
             }
             parameters.add(loc);
         }
