@@ -37,6 +37,7 @@ import java.util.Random;
 public class Mutant {
     private SootClass sClass;
     private int counter;
+    private Boolean withContracts;
     private ArrayList<String> strClasses;
     private HashMap<String, String> childMap;
     private ArrayList<Contract> contracts;
@@ -48,6 +49,7 @@ public class Mutant {
 
     public Mutant() {
         counter = 0;
+        withContracts = false;
         strClasses = new ArrayList<String>();
         strClasses.add("java.io.ByteArrayOutputStream");
         strClasses.add("java.util.concurrent.ForkJoinPool");
@@ -71,6 +73,10 @@ public class Mutant {
     public int nextInt() {
         counter = counter + 1;
         return counter;
+    }
+
+    public void setContractsCheckers(Boolean withContracts) {
+        this.withContracts = withContracts;
     }
 
     private void genClass(RandomGenerator rand) {
@@ -169,7 +175,8 @@ public class Mutant {
         method.setActiveBody(body);
         sClass.addMethod(method);
 
-        this.genBody(rand, body, returnType, parameterTypes, (modifiers & Modifier.STATIC) > 0);
+        this.genBody(rand, body, returnType, parameterTypes,
+            (modifiers & Modifier.STATIC) > 0);
     }
 
     // Generate or find parameters for the specified method call with the local
@@ -225,8 +232,8 @@ public class Mutant {
         }
     }
 
-    private void genBody(RandomGenerator rand,
-        JimpleBody body, Type returnType, ArrayList<Type> params, Boolean isStatic) {
+    private void genBody(RandomGenerator rand, JimpleBody body, Type returnType,
+        ArrayList<Type> params, Boolean isStatic) {
         Chain<Local> locals = body.getLocals();
         UnitPatchingChain units = body.getUnits();
 
@@ -293,7 +300,9 @@ public class Mutant {
             }
         }
 
-        this.applyContractsCheckers(body);
+        if (this.withContracts) {
+            this.applyContractsCheckers(body);
+        }
 
         if (returnType == VoidType.v()) {
             //Add return; statement
