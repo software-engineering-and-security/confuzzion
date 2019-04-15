@@ -83,12 +83,14 @@ public class Mutant {
         Scene.v().loadClassAndSupport("java.lang.Object");
         try {
             // Add JAR path to SootClassPath
-            String path = new File(Mutant.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();
+            String path = new File(
+                Mutant.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();
             Scene.v().extendSootClassPath(path);
         } catch(java.net.URISyntaxException e) {
             e.printStackTrace();
         }
-        Scene.v().loadClassAndSupport("com.github.aztorius.confuzzion.ContractCheckException");
+        Scene.v().loadClassAndSupport(
+            "com.github.aztorius.confuzzion.ContractCheckException");
         sClass = new SootClass("Test", Modifier.PUBLIC);
         sClass.setSuperclass(Scene.v().getSootClass("java.lang.Object"));
         Scene.v().addClass(sClass);
@@ -110,19 +112,25 @@ public class Mutant {
         Local r0 = Jimple.v().newLocal("r0", sClass.getType());
         body.getLocals().add(r0);
         //Add r0 := @this: Test; statement
-        body.getUnits().add(Jimple.v().newIdentityStmt(r0, Jimple.v().newThisRef(sClass.getType())));
+        body.getUnits().add(Jimple.v().newIdentityStmt(r0,
+            Jimple.v().newThisRef(sClass.getType())));
         //Add specialinvoke r0.<java.lang.Object: void <init>()>(); statement
-        body.getUnits().add(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(r0, Scene.v().getSootClass("java.lang.Object").getMethod("<init>", new ArrayList<Type>()).makeRef())));
+        body.getUnits().add(Jimple.v().newInvokeStmt(
+            Jimple.v().newSpecialInvokeExpr(r0,
+                Scene.v().getSootClass("java.lang.Object").getMethod("<init>",
+                    new ArrayList<Type>()).makeRef())));
         //Initialize some fields
         for (SootField field: sClass.getFields()) {
             if (!field.isStatic()) {
                 Value val = rand.randConstant(field.getType());
                 if (val != null) {
-                    body.getUnits().add(Jimple.v().newAssignStmt(Jimple.v().newInstanceFieldRef(r0, field.makeRef()), val));
+                    body.getUnits().add(Jimple.v().newAssignStmt(
+                        Jimple.v().newInstanceFieldRef(r0, field.makeRef()), val));
                 } else {
                     Local loc = this.genObject(rand, body, field.getType().toString());
                     if (loc != null) {
-                        body.getUnits().add(Jimple.v().newAssignStmt(Jimple.v().newInstanceFieldRef(r0, field.makeRef()), loc));
+                        body.getUnits().add(Jimple.v().newAssignStmt(
+                            Jimple.v().newInstanceFieldRef(r0, field.makeRef()), loc));
                     }
                 }
             }
@@ -148,7 +156,8 @@ public class Mutant {
                     // Assign to null if no value available
                     val = soot.jimple.NullConstant.v();
                 }
-                body.getUnits().add(Jimple.v().newAssignStmt(Jimple.v().newStaticFieldRef(field.makeRef()), val));
+                body.getUnits().add(Jimple.v().newAssignStmt(
+                    Jimple.v().newStaticFieldRef(field.makeRef()), val));
             }
         }
         //Add return; statement
@@ -224,11 +233,14 @@ public class Mutant {
 
         // Add method call to units
         if (method.isStatic()) {
-            units.add(Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(method.makeRef(), parameters)));
+            units.add(Jimple.v().newInvokeStmt(
+                Jimple.v().newStaticInvokeExpr(method.makeRef(), parameters)));
         } else if (method.isConstructor()) {
-            units.add(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(local, method.makeRef(), parameters)));
+            units.add(Jimple.v().newInvokeStmt(
+                Jimple.v().newSpecialInvokeExpr(local, method.makeRef(), parameters)));
         } else {
-            units.add(Jimple.v().newInvokeStmt(Jimple.v().newVirtualInvokeExpr(local, method.makeRef(), parameters)));
+            units.add(Jimple.v().newInvokeStmt(
+                Jimple.v().newVirtualInvokeExpr(local, method.makeRef(), parameters)));
         }
     }
 
@@ -241,13 +253,15 @@ public class Mutant {
             //Add "this" local
             Local thisLocal = Jimple.v().newLocal("this", sClass.getType());
             locals.add(thisLocal);
-            units.add(Jimple.v().newIdentityStmt(thisLocal, Jimple.v().newThisRef(sClass.getType())));
+            units.add(Jimple.v().newIdentityStmt(thisLocal,
+                Jimple.v().newThisRef(sClass.getType())));
         }
 
         for (int i = 0; i < params.size(); i++) {
             Local paramLocal = Jimple.v().newLocal("param" + i, params.get(i));
             locals.add(paramLocal);
-            units.add(Jimple.v().newIdentityStmt(paramLocal, Jimple.v().newParameterRef(params.get(i), i)));
+            units.add(Jimple.v().newIdentityStmt(paramLocal,
+                Jimple.v().newParameterRef(params.get(i), i)));
         }
 
         // Add random statements
@@ -347,9 +361,11 @@ public class Mutant {
                 }
                 i++;
             }
-            Local loc = Jimple.v().newLocal("local" + this.nextInt(), selectedField.getType());
+            Local loc = Jimple.v().newLocal("local" + this.nextInt(),
+                selectedField.getType());
             locals.add(loc);
-            units.add(Jimple.v().newAssignStmt(loc, Jimple.v().newStaticFieldRef(selectedField.makeRef())));
+            units.add(Jimple.v().newAssignStmt(loc,
+                Jimple.v().newStaticFieldRef(selectedField.makeRef())));
             return loc;
         }
 
@@ -400,14 +416,17 @@ public class Mutant {
             if (PrimType.class.isInstance(param)) {
                 Local loc = Jimple.v().newLocal("local" + this.nextInt(), param);
                 locals.add(loc);
-                units.add(Jimple.v().newAssignStmt(loc, rand.randConstant(param)));
+                units.add(Jimple.v().newAssignStmt(loc,
+                    rand.randConstant(param)));
                 parameters.add(loc);
                 continue;
             } else if (ArrayType.class.isInstance(param)) {
                 ArrayType paramAT = (ArrayType)param;
                 Local loc = Jimple.v().newLocal("local" + this.nextInt(), param);
                 locals.add(loc);
-                units.add(Jimple.v().newAssignStmt(loc, Jimple.v().newNewArrayExpr(paramAT.baseType, soot.jimple.IntConstant.v(rand.nextUint(100) + 1))));
+                units.add(Jimple.v().newAssignStmt(loc,
+                    Jimple.v().newNewArrayExpr(paramAT.baseType,
+                        soot.jimple.IntConstant.v(rand.nextUint(100) + 1))));
                 parameters.add(loc);
                 continue;
             }
@@ -422,12 +441,15 @@ public class Mutant {
             parameters.add(loc);
         }
         // Create local
-        Local loc = Jimple.v().newLocal("local" + this.nextInt(), clazz.getType());
+        Local loc = Jimple.v().newLocal("local" + this.nextInt(),
+            clazz.getType());
         locals.add(loc);
         // Assign local value
-        units.add(Jimple.v().newAssignStmt(loc, Jimple.v().newNewExpr(clazz.getType())));
+        units.add(Jimple.v().newAssignStmt(loc,
+            Jimple.v().newNewExpr(clazz.getType())));
         // Call constructor
-        units.add(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(loc, constructor.makeRef(), parameters)));
+        units.add(Jimple.v().newInvokeStmt(
+            Jimple.v().newSpecialInvokeExpr(loc, constructor.makeRef(), parameters)));
 
         return loc;
     }
@@ -473,7 +495,8 @@ public class Mutant {
     }
 
     public String toClassFile(SootClass sClass) {
-        String fileName = SourceLocator.v().getFileNameFor(sClass, Options.output_format_class);
+        String fileName = SourceLocator.v().getFileNameFor(sClass,
+            Options.output_format_class);
         try {
             OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
@@ -508,7 +531,8 @@ public class Mutant {
     }
 
     public String toJimple(SootClass sClass) {
-        String fileName = SourceLocator.v().getFileNameFor(sClass, Options.output_format_jimple);
+        String fileName = SourceLocator.v().getFileNameFor(sClass,
+            Options.output_format_jimple);
         try {
             OutputStream streamOut = new FileOutputStream(fileName);
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));

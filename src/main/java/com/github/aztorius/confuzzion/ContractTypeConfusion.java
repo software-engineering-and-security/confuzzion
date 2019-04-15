@@ -22,7 +22,8 @@ public class ContractTypeConfusion implements Contract {
     public void applyCheck(JimpleBody body) {
         Chain<Local> locals = body.getLocals();
         UnitPatchingChain units = body.getUnits();
-        SootClass exception = Scene.v().getSootClass("com.github.aztorius.confuzzion.ContractCheckException");
+        SootClass exception = Scene.v().getSootClass(
+            "com.github.aztorius.confuzzion.ContractCheckException");
         SootMethod mExceptionInit = exception.getMethodByName("<init>");
         SootClass clazz = Scene.v().getSootClass("java.lang.Class");
         int a = 0;
@@ -36,26 +37,35 @@ public class ContractTypeConfusion implements Contract {
                 SootClass sClass = refType.getSootClass();
 
                 // Get the class
-                Local locClass = Jimple.v().newLocal("contracttc" + a++, clazz.getType());
+                Local locClass = Jimple.v().newLocal("contracttc" + a++,
+                    clazz.getType());
                 newLocals.add(locClass);
-                units.add(Jimple.v().newAssignStmt(locClass, ClassConstant.v(refType.getClassName().replace(".", "/"))));
+                units.add(Jimple.v().newAssignStmt(locClass,
+                    ClassConstant.v(refType.getClassName().replace(".", "/"))));
                 SootMethod isInstance = clazz.getMethodByName("isInstance");
 
                 // Call isInstance on the class to check
-                Value vIsInstance = Jimple.v().newVirtualInvokeExpr(locClass, isInstance.makeRef(), local);
-                Local locBoolResult = Jimple.v().newLocal("contracttc" + a++, soot.BooleanType.v());
+                Value vIsInstance = Jimple.v().newVirtualInvokeExpr(locClass,
+                    isInstance.makeRef(), local);
+                Local locBoolResult = Jimple.v().newLocal("contracttc" + a++,
+                    soot.BooleanType.v());
                 newLocals.add(locBoolResult);
                 units.add(Jimple.v().newAssignStmt(locBoolResult, vIsInstance));
 
                 // if isInstance return 0 then jump at the end
                 // else throw Exception
                 Unit uNop = Jimple.v().newNopStmt();
-                units.add(Jimple.v().newIfStmt(Jimple.v().newEqExpr(locBoolResult, soot.jimple.IntConstant.v(0)), uNop));
-                Local locException = Jimple.v().newLocal("contracttc" + a++, exception.getType());
+                units.add(Jimple.v().newIfStmt(Jimple.v().newEqExpr(locBoolResult,
+                    soot.jimple.IntConstant.v(0)), uNop));
+                Local locException = Jimple.v().newLocal("contracttc" + a++,
+                    exception.getType());
                 newLocals.add(locException);
-                units.add(Jimple.v().newAssignStmt(locException, Jimple.v().newNewExpr(exception.getType())));
+                units.add(Jimple.v().newAssignStmt(locException,
+                    Jimple.v().newNewExpr(exception.getType())));
                 // Call locException constructor
-                units.add(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(locException, mExceptionInit.makeRef())));
+                units.add(Jimple.v().newInvokeStmt(
+                    Jimple.v().newSpecialInvokeExpr(locException,
+                        mExceptionInit.makeRef())));
                 // Add throw statement
                 Unit uThrow = Jimple.v().newThrowStmt(locException);
                 units.add(uThrow);
