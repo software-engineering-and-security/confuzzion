@@ -53,6 +53,7 @@ public class Mutant {
         strClasses = new ArrayList<String>();
         strClasses.add("java.io.ByteArrayOutputStream");
         strClasses.add("java.util.concurrent.ForkJoinPool");
+        strClasses.add("java.lang.invoke.MethodHandles");
         childMap = new HashMap<String, String>();
         childMap.put("java.util.concurrent.BlockingQueue",
                      "java.util.concurrent.ArrayBlockingQueue");
@@ -402,9 +403,18 @@ public class Mutant {
         }
 
         if (constructors.size() == 0) {
-            //TODO: debug: no constructors found
-            // System.out.println("DEBUG: GEN: no constructors found");
-            return null;
+            // No constructors found. Try invoking static methods to get other
+            // type of objects.
+            for (SootMethod method : clazz.getMethods()) {
+                if (!method.isConstructor() && method.isPublic() && method.isStatic()) {
+                    constructors.add(method);
+                }
+            }
+
+            if (constructors.size() == 0) {
+                return null;
+            }
+            // else: continue as if it is a constructor
         }
 
         SootMethod constructor = constructors.get(rand.nextUint(constructors.size()));
@@ -449,18 +459,34 @@ public class Mutant {
             }
             parameters.add(loc);
         }
-        // Create local
-        Local loc = Jimple.v().newLocal("local" + this.nextInt(),
-            clazz.getType());
-        locals.add(loc);
-        // Assign local value
-        units.add(Jimple.v().newAssignStmt(loc,
-            Jimple.v().newNewExpr(clazz.getType())));
-        // Call constructor
-        units.add(Jimple.v().newInvokeStmt(
-            Jimple.v().newSpecialInvokeExpr(loc, constructor.makeRef(), parameters)));
 
-        return loc;
+        Local loc = null;
+
+        if (!constructor.isStatic()) {
+            // Create local
+            loc = Jimple.v().newLocal("local" + this.nextInt(),
+            clazz.getType());
+            locals.add(loc);
+            // Assign local value
+            units.add(Jimple.v().newAssignStmt(loc,
+                Jimple.v().newNewExpr(clazz.getType())));
+            // Call constructor
+            units.add(Jimple.v().newInvokeStmt(
+                Jimple.v().newSpecialInvokeExpr(loc,
+                    constructor.makeRef(), parameters)));
+            return loc;
+        } else { // Static method call
+            // Create local
+            loc = Jimple.v().newLocal("local" + this.nextInt(),
+                constructor.getReturnType());
+            locals.add(loc);
+            // Assign the static method call return value
+            units.add(Jimple.v().newAssignStmt(loc,
+                Jimple.v().newStaticInvokeExpr(constructor.makeRef(), parameters)));
+            // Even if we succeeded at building an object, it is not the correct
+            // type as specified by the caller.
+            return null;
+        }
     }
 
     private void genMethods(RandomGenerator rand) {
