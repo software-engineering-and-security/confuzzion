@@ -241,6 +241,9 @@ public class Mutant {
         } else if (method.isConstructor()) {
             units.add(Jimple.v().newInvokeStmt(
                 Jimple.v().newSpecialInvokeExpr(local, method.makeRef(), parameters)));
+        } else if (method.getDeclaringClass().isInterface()) {
+            units.add(Jimple.v().newInvokeStmt(
+                Jimple.v().newInterfaceInvokeExpr(local, method.makeRef(), parameters)));
         } else {
             units.add(Jimple.v().newInvokeStmt(
                 Jimple.v().newVirtualInvokeExpr(local, method.makeRef(), parameters)));
@@ -391,8 +394,7 @@ public class Mutant {
             if (child != null) {
                 return this.genObject(rand, body, child);
             }
-            // System.out.println("DEBUG: GEN: " + clazz.getName() + " is not concrete");
-            return null;
+            // try to continue anyway
         }
 
         ArrayList<SootMethod> constructors = new ArrayList<SootMethod>();
@@ -405,16 +407,25 @@ public class Mutant {
         if (constructors.size() == 0) {
             // No constructors found. Try invoking static methods to get other
             // type of objects.
+            // But first try to find a static method of Class<T> that return
+            // a type T.
+            ArrayList<SootMethod> methodsSameType = new ArrayList<SootMethod>();
             for (SootMethod method : clazz.getMethods()) {
-                if (!method.isConstructor() && method.isPublic() && method.isStatic()) {
+                if (method.isPublic() && method.isStatic()) {
+                    if (method.getReturnType() == clazz.getType()) {
+                        methodsSameType.add(method);
+                    }
                     constructors.add(method);
                 }
             }
 
             if (constructors.size() == 0) {
                 return null;
+            } else if (methodsSameType.size() > 0) {
+                constructors = methodsSameType;
             }
-            // else: continue as if it is a constructor
+            // else: continue with an other static method call that return an
+            // other type of object
         }
 
         SootMethod constructor = constructors.get(rand.nextUint(constructors.size()));
@@ -483,9 +494,14 @@ public class Mutant {
             // Assign the static method call return value
             units.add(Jimple.v().newAssignStmt(loc,
                 Jimple.v().newStaticInvokeExpr(constructor.makeRef(), parameters)));
-            // Even if we succeeded at building an object, it is not the correct
-            // type as specified by the caller.
-            return null;
+
+            if (constructor.getReturnType() == clazz.getType()) {
+                return loc;
+            } else {
+                // Even if we succeeded at building an object, it is not the correct
+                // type as specified by the caller.
+                return null;
+            }
         }
     }
 
