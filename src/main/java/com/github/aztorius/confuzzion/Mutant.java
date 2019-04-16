@@ -216,9 +216,11 @@ public class Mutant {
                 locParam = rand.randConstant(paramType);
             } else if (soot.ArrayType.class.isInstance(paramType)) {
                 // paramType is an Array Type
-                //TODO: java.lang.IllegalArgumentException: value may not be null
-                //locParam = ;
-                return;
+                locParam = this.genArray(rand, body, paramType);
+                if (locParam == null) {
+                    // Cannot build the array
+                    return;
+                }
             } else {
                 locParam = this.genObject(rand, body, paramType.toString());
                 if (locParam == null) {
@@ -337,6 +339,19 @@ public class Mutant {
         }
     }
 
+    private Local genArray(RandomGenerator rand, JimpleBody body, Type type) {
+        Chain<Local> locals = body.getLocals();
+        UnitPatchingChain units = body.getUnits();
+        ArrayType arrayType = (ArrayType)type;
+        Type baseType = arrayType.baseType;
+        Local loc = Jimple.v().newLocal("local" + this.nextInt(), type);
+        locals.add(loc);
+        Value arraySize = soot.jimple.IntConstant.v(rand.nextUint(100) + 1);
+        units.add(Jimple.v().newAssignStmt(loc,
+            Jimple.v().newNewArrayExpr(baseType, arraySize)));
+        return loc;
+    }
+
     private Local genObject(RandomGenerator rand, JimpleBody body, String strObj) {
         Chain<Local> locals = body.getLocals();
         UnitPatchingChain units = body.getUnits();
@@ -421,13 +436,7 @@ public class Mutant {
                 parameters.add(loc);
                 continue;
             } else if (ArrayType.class.isInstance(param)) {
-                ArrayType paramAT = (ArrayType)param;
-                Local loc = Jimple.v().newLocal("local" + this.nextInt(), param);
-                locals.add(loc);
-                units.add(Jimple.v().newAssignStmt(loc,
-                    Jimple.v().newNewArrayExpr(paramAT.baseType,
-                        soot.jimple.IntConstant.v(rand.nextUint(100) + 1))));
-                parameters.add(loc);
+                parameters.add(this.genArray(rand, body, param));
                 continue;
             }
 
