@@ -313,10 +313,20 @@ public class Mutant {
                         break;
                     }
                 default: //Cast
-                    //TODO: units.add(Jimple.v().newCastExpr(Value, Type));
-                    //TODO: random Value/Local and random Type
+                    Local loc1 = Util.randomLocal(locals, rand);
+                    if (loc1 == null) {
+                        continue;
+                    } else if (!(loc1.getType() instanceof RefType)) {
+                        continue;
+                    }
+                    //TODO; cast to other types
+                    Local loc2 = Jimple.v().newLocal("local" + this.nextInt(),
+                        loc1.getType());
+                    locals.add(loc2);
+                    units.add(
+                        Jimple.v().newAssignStmt(loc2,
+                            Jimple.v().newCastExpr(loc1, loc2.getType())));
                     //TODO: catch exception if cast should not work
-                    continue;
             }
         }
 
