@@ -17,7 +17,7 @@ public class ConfuzzionGenerator extends Generator<GenerationResult> {
     @Override
     public GenerationResult generate(SourceOfRandomness random, GenerationStatus status) {
         try {
-            Mutant mut = new Mutant();
+            Mutant mut = new Mutant("Test");
             mut.generate(new RandomGenerator(random.toJDKRandom()));
             byte[] array = mut.toClass(mut.getSootClass());
             return new GenerationResult(array);

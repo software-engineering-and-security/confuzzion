@@ -35,11 +35,11 @@ import java.util.List;
 import java.util.Random;
 
 public class Mutant {
+    private String className;
     private SootClass sClass;
     private int counter;
     private Boolean withContracts;
     private ArrayList<String> strClasses;
-    private HashMap<String, String> childMap;
     private ArrayList<Contract> contracts;
 
     private static int MAX_FIELDS = 20;
@@ -47,16 +47,14 @@ public class Mutant {
     private static int MAX_PARAMETERS = 3;
     private static int MAX_STATEMENTS = 10;
 
-    public Mutant() {
+    public Mutant(String className) {
+        this.className = className;
         counter = 0;
         withContracts = false;
         strClasses = new ArrayList<String>();
         strClasses.add("java.io.ByteArrayOutputStream");
         strClasses.add("java.util.concurrent.ForkJoinPool");
         strClasses.add("java.lang.invoke.MethodHandles");
-        childMap = new HashMap<String, String>();
-        childMap.put("java.util.concurrent.BlockingQueue",
-                     "java.util.concurrent.ArrayBlockingQueue");
         contracts = new ArrayList<Contract>();
         contracts.add(new ContractTypeConfusion());
     }
@@ -69,6 +67,10 @@ public class Mutant {
 
     public SootClass getSootClass() {
         return sClass;
+    }
+
+    public void setSootClass(SootClass clazz) {
+        sClass = clazz;
     }
 
     public int nextInt() {
@@ -92,7 +94,7 @@ public class Mutant {
         }
         Scene.v().loadClassAndSupport(
             "com.github.aztorius.confuzzion.ContractCheckException");
-        sClass = new SootClass("Test", Modifier.PUBLIC);
+        sClass = new SootClass(this.className, Modifier.PUBLIC);
         sClass.setSuperclass(Scene.v().getSootClass("java.lang.Object"));
         Scene.v().addClass(sClass);
     }
@@ -400,7 +402,7 @@ public class Mutant {
 
         if (!clazz.isConcrete()) {
             // Find another class that implements this abstract class or interface
-            String child = this.childMap.get(clazz.getName());
+            String child = Util.abstractToConcrete(clazz.getName());
             if (child != null) {
                 return this.genObject(rand, body, child);
             }
@@ -553,6 +555,18 @@ public class Mutant {
         this.genMethods(rand);
         //Constructors
         this.genConstructor(rand);
+    }
+
+    public void genEmptyClass(RandomGenerator rand) {
+        //Class
+        this.genClass(rand);
+        //Constructors
+        this.genConstructor(rand);
+    }
+
+    public Mutant mutate() {
+        //TODO: Apply a random mutation on the Mutant
+        return this;
     }
 
     public String toClassFile(SootClass sClass) {
