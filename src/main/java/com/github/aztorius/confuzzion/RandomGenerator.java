@@ -18,13 +18,20 @@ import java.util.Random;
 
 public class RandomGenerator {
     private Random rand;
+    private long counter;
 
     public RandomGenerator() {
         rand = new Random();
+        counter = 0;
     }
 
     public RandomGenerator(Random rand) {
         this.rand = rand;
+        this.counter = 0;
+    }
+
+    public long nextIncrement() {
+        return counter++;
     }
 
     public boolean nextBoolean() {
