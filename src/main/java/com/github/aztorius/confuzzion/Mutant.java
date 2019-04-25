@@ -38,7 +38,6 @@ public class Mutant {
     private String className;
     private SootClass sClass;
     private int counter;
-    private Boolean withContracts;
     private ArrayList<String> strClasses;
     private ArrayList<Contract> contracts;
 
@@ -50,7 +49,6 @@ public class Mutant {
     public Mutant(String className) {
         this.className = className;
         counter = 0;
-        withContracts = false;
         strClasses = new ArrayList<String>();
         strClasses.add("java.io.ByteArrayOutputStream");
         strClasses.add("java.util.concurrent.ForkJoinPool");
@@ -59,10 +57,12 @@ public class Mutant {
         contracts.add(new ContractTypeConfusion());
     }
 
-    private void applyContractsCheckers(JimpleBody body) {
-        for (Contract contract : contracts) {
-            contract.applyCheck(body);
+    private ArrayList<BodyMutation> applyContract(Contract contract) {
+        ArrayList<BodyMutation> mutations = new ArrayList<BodyMutation>();
+        for (SootMethod method : sClass.getMethods()) {
+            mutations.add(contract.applyCheck(method.getActiveBody()));
         }
+        return mutations;
     }
 
     public SootClass getSootClass() {
@@ -76,10 +76,6 @@ public class Mutant {
     public int nextInt() {
         counter = counter + 1;
         return counter;
-    }
-
-    public void setContractsCheckers(Boolean withContracts) {
-        this.withContracts = withContracts;
     }
 
     private void genClass(RandomGenerator rand) {
@@ -332,10 +328,6 @@ public class Mutant {
             }
         }
 
-        if (this.withContracts) {
-            this.applyContractsCheckers(body);
-        }
-
         if (returnType == VoidType.v()) {
             //Add return; statement
             units.add(Jimple.v().newReturnVoidStmt());
@@ -562,11 +554,6 @@ public class Mutant {
         this.genClass(rand);
         //Constructors
         this.genConstructor(rand);
-    }
-
-    public Mutant mutate() {
-        //TODO: Apply a random mutation on the Mutant
-        return this;
     }
 
     public String toClassFile(SootClass sClass) {

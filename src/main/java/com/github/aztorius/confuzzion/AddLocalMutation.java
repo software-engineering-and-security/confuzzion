@@ -20,61 +20,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AddLocalMutation extends MethodMutation {
-    private ArrayList<Local> addedLocals;
-    private ArrayList<Unit> addedUnits;
-
-    public AddLocalMutation(SootMethod method) {
-        super(method);
-        addedLocals = new ArrayList<Local>();
-        addedUnits = new ArrayList<Unit>();
-    }
-
-    @Override
-    public void apply(RandomGenerator rand) {
+    public AddLocalMutation(RandomGenerator rand, SootMethod method) {
+        super(rand, method);
         Body body = method.getActiveBody();
         Local local = Jimple.v().newLocal("local" + rand.nextIncrement(),
             rand.randType(false));
-        if (PrimType.class.isInstance(local)) {
+        if (PrimType.class.isInstance(local.getType())) {
             // Primitive type
-            this.addLocal(body, local);
+            mutation.addLocal(local);
             Value rvalue = rand.randConstant(local.getType());
-            this.addUnit(body, Jimple.v().newAssignStmt(local, rvalue));
+            mutation.addUnit(Jimple.v().newAssignStmt(local, rvalue));
         } else {
             // Reference of an object
             this.genObject(rand, body, local.getType().toString());
         }
     }
 
-    @Override
-    public void undo() {
-        Body body = method.getActiveBody();
-        for (Local local : addedLocals) {
-            body.getLocals().remove(local);
-        }
-        for (Unit unit : addedUnits) {
-            body.getUnits().remove(unit);
-        }
-    }
-
-    private void addLocal(Body body, Local local) {
-        Chain<Local> locals = body.getLocals();
-        locals.add(local);
-        addedLocals.add(local);
-    }
-
-    private void addUnit(Body body, Unit unit) {
-        UnitPatchingChain units = body.getUnits();
-        units.add(unit);
-        addedUnits.add(unit);
-    }
-
     private Local genArray(RandomGenerator rand, Body body, Type type) {
         ArrayType arrayType = (ArrayType)type;
         Type baseType = arrayType.baseType;
         Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(), type);
-        this.addLocal(body, loc);
+        mutation.addLocal(loc);
         Value arraySize = soot.jimple.IntConstant.v(rand.nextUint(100) + 1);
-        this.addUnit(body, Jimple.v().newAssignStmt(loc,
+        mutation.addUnit(Jimple.v().newAssignStmt(loc,
             Jimple.v().newNewArrayExpr(baseType, arraySize)));
         return loc;
     }
@@ -104,8 +72,8 @@ public class AddLocalMutation extends MethodMutation {
             }
             Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(),
                 selectedField.getType());
-            this.addLocal(body, loc);
-            this.addUnit(body, Jimple.v().newAssignStmt(loc,
+            mutation.addLocal(loc);
+            mutation.addUnit(Jimple.v().newAssignStmt(loc,
                 Jimple.v().newStaticFieldRef(selectedField.makeRef())));
             return loc;
         }
@@ -173,8 +141,8 @@ public class AddLocalMutation extends MethodMutation {
             // Create a primitive typed local with a constant
             if (PrimType.class.isInstance(param)) {
                 Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(), param);
-                this.addLocal(body, loc);
-                this.addUnit(body, Jimple.v().newAssignStmt(loc,
+                mutation.addLocal(loc);
+                mutation.addUnit(Jimple.v().newAssignStmt(loc,
                     rand.randConstant(param)));
                 parameters.add(loc);
                 continue;
@@ -199,12 +167,12 @@ public class AddLocalMutation extends MethodMutation {
             // Create local
             loc = Jimple.v().newLocal("local" + rand.nextIncrement(),
             clazz.getType());
-            this.addLocal(body, loc);
+            mutation.addLocal(loc);
             // Assign local value
-            this.addUnit(body, Jimple.v().newAssignStmt(loc,
+            mutation.addUnit(Jimple.v().newAssignStmt(loc,
                 Jimple.v().newNewExpr(clazz.getType())));
             // Call constructor
-            this.addUnit(body, Jimple.v().newInvokeStmt(
+            mutation.addUnit(Jimple.v().newInvokeStmt(
                 Jimple.v().newSpecialInvokeExpr(loc,
                     constructor.makeRef(), parameters)));
             return loc;
@@ -212,9 +180,9 @@ public class AddLocalMutation extends MethodMutation {
             // Create local
             loc = Jimple.v().newLocal("local" + rand.nextIncrement(),
                 constructor.getReturnType());
-            this.addLocal(body, loc);
+            mutation.addLocal(loc);
             // Assign the static method call return value
-            this.addUnit(body, Jimple.v().newAssignStmt(loc,
+            mutation.addUnit(Jimple.v().newAssignStmt(loc,
                 Jimple.v().newStaticInvokeExpr(constructor.makeRef(), parameters)));
 
             if (constructor.getReturnType() == clazz.getType()) {

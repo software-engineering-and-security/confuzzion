@@ -1,31 +1,28 @@
 package com.github.aztorius.confuzzion;
 
+import soot.Body;
 import soot.SootMethod;
-
-import java.util.List;
 
 /* A Method Mutation describes how a method will be changed (adding,
  * modifying, removing a local , parameter, return value or method call ...)
  */
-public abstract class MethodMutation {
-    SootMethod method;
+public abstract class MethodMutation extends Mutation {
+    protected SootMethod method;
+    protected BodyMutation mutation;
 
-    protected MethodMutation(SootMethod method) {
+    protected MethodMutation(RandomGenerator rand, SootMethod method) {
+        super(rand);
         this.method = method;
+        this.mutation = new BodyMutation(method.getActiveBody());
     }
 
-    /* Apply the mutation on a method
-     */
-    public abstract void apply(RandomGenerator rand);
+    public Body getBody() {
+        return method.getActiveBody();
+    }
 
-    /* Remove the mutation from method. Only available after a call to apply.
+    /* Remove the mutation from method body.
      */
-    public abstract void undo();
-
-    /* Apply the mutation on a copy of method and add all necessary contracts
-     * checkers, and then return it
-     */
-    // public SootMethod applyAndCheck(
-    //     SootMethod method,
-    //     List<Contract> contracts);
+    public void undo() {
+        mutation.undo();
+    }
 }
