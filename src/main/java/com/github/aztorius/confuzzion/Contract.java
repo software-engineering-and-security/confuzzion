@@ -1,7 +1,7 @@
 package com.github.aztorius.confuzzion;
 
-import soot.jimple.JimpleBody;
+import soot.Body;
 
-public interface Contract {
-    public void applyCheck(JimpleBody body);
+public abstract class Contract {
+    public abstract BodyMutation applyCheck(Body body);
 }
