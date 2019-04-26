@@ -19,6 +19,12 @@ import java.util.Random;
 public class RandomGenerator {
     private Random rand;
     private long counter;
+    private int poolBoolean[] = {0, 1};
+    private int poolInt[] = {0, 1, -1, 2};
+    private long poolLong[] = {0, 1, -1, 2};
+    private int poolChar[] = {'a', 'A', '0'};
+    private float poolFloat[] = {0.0f, 1.0f, -1.0f};
+    private double poolDouble[] = {0.0, 1.0, -1.0};
 
     public RandomGenerator() {
         rand = new Random();
@@ -28,6 +34,22 @@ public class RandomGenerator {
     public RandomGenerator(Random rand) {
         this.rand = rand;
         this.counter = 0;
+    }
+
+    private int getIntFromPool(int[] pool) {
+        return pool[this.nextUint(pool.length)];
+    }
+
+    private long getLongFromPool(long[] pool) {
+        return pool[this.nextUint(pool.length)];
+    }
+
+    private float getFloatFromPool(float[] pool) {
+        return pool[this.nextUint(pool.length)];
+    }
+
+    private double getDoubleFromPool(double[] pool) {
+        return pool[this.nextUint(pool.length)];
     }
 
     public long nextIncrement() {
@@ -84,21 +106,21 @@ public class RandomGenerator {
         Value val = null;
 
         if (type == BooleanType.v()) {
-            val = soot.jimple.IntConstant.v(this.nextUint() % 2);
+            val = soot.jimple.IntConstant.v(this.getIntFromPool(poolBoolean));
         } else if (type == ByteType.v()) {
             val = soot.jimple.IntConstant.v(this.nextUint() % 256);
         } else if (type == CharType.v()) {
-            val = soot.jimple.IntConstant.v(this.nextUint() % 256);
+            val = soot.jimple.IntConstant.v(this.getIntFromPool(poolChar));
         } else if (type == DoubleType.v()) {
-            val = soot.jimple.DoubleConstant.v(this.nextDouble());
+            val = soot.jimple.DoubleConstant.v(this.getDoubleFromPool(poolDouble));
         } else if (type == FloatType.v()) {
-            val = soot.jimple.FloatConstant.v(this.nextFloat());
+            val = soot.jimple.FloatConstant.v(this.getFloatFromPool(poolFloat));
         } else if (type == IntType.v()) {
-            val = soot.jimple.IntConstant.v(this.nextInt());
+            val = soot.jimple.IntConstant.v(this.getIntFromPool(poolInt));
         } else if (type == LongType.v()) {
-            val = soot.jimple.LongConstant.v(this.nextLong());
+            val = soot.jimple.LongConstant.v(this.getLongFromPool(poolLong));
         } else if (type == ShortType.v()) {
-            val = soot.jimple.IntConstant.v(this.nextInt());
+            val = soot.jimple.IntConstant.v(this.getIntFromPool(poolInt));
         } else {
             //TODO: not a primitive type and not in a local
             //System.out.println("DEBUG: RG: Not a primitive type for constant generation");
