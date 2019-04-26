@@ -37,6 +37,7 @@
           <!-- The Maven Assembly plugin to build a jar file -->
           <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.1.1</version>
             <executions>
               <execution>
                 <phase>package</phase>
@@ -46,7 +47,9 @@
               </execution>
             </executions>
             <configuration>
-              <descriptor>src/main/assembly/assembly.xml</descriptor>
+              <descriptors>
+                <descriptor>src/main/assembly/assembly.xml</descriptor>
+              </descriptors>
               <archive>
                 <manifest>
                   <mainClass>confuzziontest.ConfuzzionMain</mainClass>

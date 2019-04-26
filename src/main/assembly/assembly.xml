@@ -9,7 +9,7 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory></outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
             <unpack>true</unpack>
             <scope>test</scope>
@@ -18,7 +18,7 @@
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}/test-classes</directory>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory></outputDirectory>
             <includes>
                 <include>**/*.class</include>
             </includes>
