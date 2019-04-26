@@ -118,7 +118,8 @@ public class AddLocalMutation extends MethodMutation {
             // other type of object
         }
 
-        SootMethod constructor = constructors.get(rand.nextUint(constructors.size()));
+        SootMethod constructor =
+            constructors.get(rand.nextUint(constructors.size()));
         List<Type> parameterTypes = constructor.getParameterTypes();
         ArrayList<Value> parameters = new ArrayList<Value>();
         Boolean found = false;
@@ -140,10 +141,11 @@ public class AddLocalMutation extends MethodMutation {
 
             // Create a primitive typed local with a constant
             if (PrimType.class.isInstance(param)) {
-                Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(), param);
+                Local loc =
+                    Jimple.v().newLocal("local" + rand.nextIncrement(), param);
                 mutation.addLocal(loc);
-                mutation.addUnit(Jimple.v().newAssignStmt(loc,
-                    rand.randConstant(param)));
+                mutation.addUnit(
+                    Jimple.v().newAssignStmt(loc, rand.randConstant(param)));
                 parameters.add(loc);
                 continue;
             } else if (ArrayType.class.isInstance(param)) {
@@ -166,15 +168,17 @@ public class AddLocalMutation extends MethodMutation {
         if (!constructor.isStatic()) {
             // Create local
             loc = Jimple.v().newLocal("local" + rand.nextIncrement(),
-            clazz.getType());
+                                      clazz.getType());
             mutation.addLocal(loc);
             // Assign local value
-            mutation.addUnit(Jimple.v().newAssignStmt(loc,
-                Jimple.v().newNewExpr(clazz.getType())));
+            mutation.addUnit(
+                Jimple.v().newAssignStmt(loc,
+                                         Jimple.v().newNewExpr(clazz.getType())));
             // Call constructor
             mutation.addUnit(Jimple.v().newInvokeStmt(
                 Jimple.v().newSpecialInvokeExpr(loc,
-                    constructor.makeRef(), parameters)));
+                                                constructor.makeRef(),
+                                                parameters)));
             return loc;
         } else { // Static method call
             // Create local
@@ -182,8 +186,10 @@ public class AddLocalMutation extends MethodMutation {
                 constructor.getReturnType());
             mutation.addLocal(loc);
             // Assign the static method call return value
-            mutation.addUnit(Jimple.v().newAssignStmt(loc,
-                Jimple.v().newStaticInvokeExpr(constructor.makeRef(), parameters)));
+            mutation.addUnit(
+                Jimple.v().newAssignStmt(loc,
+                                         Jimple.v().newStaticInvokeExpr(constructor.makeRef(),
+                                                                        parameters)));
 
             if (constructor.getReturnType() == clazz.getType()) {
                 return loc;

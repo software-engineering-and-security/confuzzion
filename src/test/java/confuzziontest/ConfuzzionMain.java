@@ -35,6 +35,11 @@ public class ConfuzzionMain {
             for (int loop2 = 0; loop2 < constants_retry; loop2++) {
                 // TODO: change constants in mutation units taken from a pool
                 try {
+                    if (verbose) {
+                        System.out.println(
+                            "===Program Test: iter1 " + loop1 +
+                            " iter2 " + loop2 + "===");
+                    }
                     // Instantiation and launch
                     currentProg.genAndLaunch(verbose);
                     // Continue if no exception else try other constants
@@ -44,7 +49,8 @@ public class ConfuzzionMain {
                 }
             }
             // Add contracts checks
-            ArrayList<BodyMutation> contractsMutations = currentProg.addContractsChecks(contracts, mutation);
+            ArrayList<BodyMutation> contractsMutations =
+                currentProg.addContractsChecks(contracts, mutation);
             try {
                 // Instantiation and launch
                 currentProg.genAndLaunch(verbose);
@@ -52,6 +58,7 @@ public class ConfuzzionMain {
                 currentProg.removeContractsChecks(contractsMutations);
             } catch(ContractCheckException e) {
                 // TODO: add the program source code to the result list
+                // save the resulting class file ?
                 // Remove contracts checks
                 currentProg.removeContractsChecks(contractsMutations);
                 e.printStackTrace();
