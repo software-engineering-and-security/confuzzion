@@ -47,12 +47,12 @@
               </execution>
             </executions>
             <configuration>
-              <descriptors>
-                <descriptor>src/main/assembly/assembly.xml</descriptor>
-              </descriptors>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
               <archive>
                 <manifest>
-                  <mainClass>confuzziontest.ConfuzzionMain</mainClass>
+                  <mainClass>com.github.aztorius.confuzzion.ConfuzzionMain</mainClass>
                 </manifest>
               </archive>
             </configuration>

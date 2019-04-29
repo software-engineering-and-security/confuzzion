@@ -1,14 +1,4 @@
-package confuzziontest;
-
-import com.github.aztorius.confuzzion.BodyMutation;
-import com.github.aztorius.confuzzion.ByteClassLoader;
-import com.github.aztorius.confuzzion.Contract;
-import com.github.aztorius.confuzzion.ContractCheckException;
-import com.github.aztorius.confuzzion.ContractTypeConfusion;
-import com.github.aztorius.confuzzion.Mutant;
-import com.github.aztorius.confuzzion.Mutation;
-import com.github.aztorius.confuzzion.Program;
-import com.github.aztorius.confuzzion.RandomGenerator;
+package com.github.aztorius.confuzzion;
 
 import java.lang.IllegalAccessException;
 import java.lang.InstantiationException;
