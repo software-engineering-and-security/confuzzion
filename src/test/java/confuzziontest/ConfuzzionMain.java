@@ -18,21 +18,70 @@ import java.util.ArrayList;
 
 public class ConfuzzionMain {
     public static void main(String args[]) {
-        ConfuzzionMain conf = new ConfuzzionMain();
-        conf.start(10, 10, true);
+        //TODO: add support for verbose option
+        if (args.length < 1 || args.length > 3) {
+            ConfuzzionMain.printHelp();
+        } else if (args[0].equals("mutate")) {
+            long const_loop_iterations = 10;
+            long main_loop_iterations = 10;
+            if (args.length == 3) {
+                try {
+                    const_loop_iterations = Long.parseLong(args[2]);
+                } catch(NumberFormatException e) {
+                    ConfuzzionMain.printHelp();
+                    return;
+                }
+            }
+            if (args.length >= 2) {
+                try {
+                    main_loop_iterations = Long.parseLong(args[1]);
+                } catch(NumberFormatException e) {
+                    ConfuzzionMain.printHelp();
+                    return;
+                }
+            }
+            ConfuzzionMain conf = new ConfuzzionMain();
+            conf.startMutation(const_loop_iterations, main_loop_iterations, true);
+        } else if (args[0].equals("generate")) {
+            long main_loop_iterations = 10;
+            ConfuzzionMain conf = new ConfuzzionMain();
+            conf.startGeneration(main_loop_iterations, true);
+        } else {
+            ConfuzzionMain.printHelp();
+        }
     }
 
-    public void start(int constants_retry, int mainloop_turn, boolean verbose) {
+    private static void printHelp() {
+        System.err.println(
+            "Usage: mutate [MAIN_LOOP_ITERATIONS] [CONST_LOOP_ITERATIONS]\n" +
+            "       generate [MAIN_LOOP_ITERATIONS]"
+        );
+    }
+
+    public void startGeneration(long mainloop_turn, boolean verbose) {
+        //TODO
+        // RandomGenerator rand = new RandomGenerator();
+        // MutantGenerator generator = new MutantGenerator(rand, "Test");
+        // ArrayList<Contract> contracts = new ArrayList<Contract>();
+        // contracts.add(new ContractTypeConfusion());
+        //
+        // for (long loop1 = 0; loop1 < mainloop_turn; loop1++) {
+        //     generator.generate();
+        //     Mutant mutant = generator.addContractsChecks(contracts);
+        // }
+    }
+
+    public void startMutation(long constants_retry, long mainloop_turn, boolean verbose) {
         RandomGenerator rand = new RandomGenerator();
         ArrayList<Contract> contracts = new ArrayList<Contract>();
         contracts.add(new ContractTypeConfusion());
 
         Program currentProg = new Program("Test", rand);
 
-        for (int loop1 = 0; loop1 < mainloop_turn; loop1++) {
+        for (long loop1 = 0; loop1 < mainloop_turn || mainloop_turn < 0; loop1++) {
             // Random mutation (program level | class level | method level)
             Mutation mutation = currentProg.randomMutation();
-            for (int loop2 = 0; loop2 < constants_retry; loop2++) {
+            for (long loop2 = 0; loop2 < constants_retry || constants_retry < 0; loop2++) {
                 // TODO: change constants in mutation units taken from a pool
                 try {
                     if (verbose) {
