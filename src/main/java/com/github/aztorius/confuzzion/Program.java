@@ -24,8 +24,8 @@ public class Program {
         this.mutants = new ArrayList<Mutant>();
 
         // Create first empty Mutant (main class)
-        Mutant firstMutant = new Mutant(classBaseName + "0");
-        firstMutant.genEmptyClass(rand);
+        MutantGenerator generator = new MutantGenerator(rand, classBaseName + "0");
+        Mutant firstMutant = generator.genEmptyClass();
         this.mutants.add(firstMutant);
     }
 

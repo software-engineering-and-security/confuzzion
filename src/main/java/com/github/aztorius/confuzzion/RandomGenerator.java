@@ -14,6 +14,7 @@ import soot.Value;
 import soot.VoidType;
 
 import java.lang.Math;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class RandomGenerator {
@@ -26,14 +27,23 @@ public class RandomGenerator {
     private float poolFloat[] = {0.0f, 1.0f, -1.0f};
     private double poolDouble[] = {0.0, 1.0, -1.0};
 
+    private ArrayList<String> strClasses;
+
     public RandomGenerator() {
-        rand = new Random();
-        counter = 0;
+        this(new Random());
     }
 
     public RandomGenerator(Random rand) {
         this.rand = rand;
         this.counter = 0;
+        strClasses = new ArrayList<String>();
+        strClasses.add("java.io.ByteArrayOutputStream");
+        strClasses.add("java.util.concurrent.ForkJoinPool");
+        strClasses.add("java.lang.invoke.MethodHandles");
+    }
+
+    public String getClassName() {
+        return strClasses.get(this.nextUint(strClasses.size()));
     }
 
     private int getIntFromPool(int[] pool) {
