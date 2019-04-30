@@ -9,5 +9,5 @@ public abstract class Mutation {
 
     public abstract void undo();
 
-    //TODO: public abstract void retry();
+    public abstract void randomConstants();
 }

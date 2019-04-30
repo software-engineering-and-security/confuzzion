@@ -2,6 +2,11 @@ package com.github.aztorius.confuzzion;
 
 import soot.Body;
 import soot.SootMethod;
+import soot.Value;
+import soot.ValueBox;
+import soot.jimple.Constant;
+
+import java.util.List;
 
 /* A Method Mutation describes how a method will be changed (adding,
  * modifying, removing a local , parameter, return value or method call ...)
@@ -25,4 +30,17 @@ public abstract class MethodMutation extends Mutation {
     public void undo() {
         mutation.undo();
     }
+
+    public void randomConstants() {
+        List<ValueBox> boxes = mutation.getUseBoxes();
+        for (ValueBox box : boxes) {
+            if (Constant.class.isInstance(box.getValue())) {
+                Value val = rand.randConstant(box.getValue().getType());
+                if (val == null) {
+                    continue;
+                }
+                box.setValue(val);
+            }
+        }
+     }
 }

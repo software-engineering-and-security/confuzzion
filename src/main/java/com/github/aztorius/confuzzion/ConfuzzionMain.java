@@ -72,7 +72,8 @@ public class ConfuzzionMain {
             // Random mutation (program level | class level | method level)
             Mutation mutation = currentProg.randomMutation();
             for (long loop2 = 0; loop2 < constants_retry || constants_retry < 0; loop2++) {
-                // TODO: change constants in mutation units taken from a pool
+                // Change constants in mutation units taken from a pool
+                mutation.randomConstants();
                 try {
                     if (verbose) {
                         System.out.println(

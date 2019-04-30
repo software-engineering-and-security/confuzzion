@@ -3,8 +3,10 @@ package com.github.aztorius.confuzzion;
 import soot.Body;
 import soot.Local;
 import soot.Unit;
+import soot.ValueBox;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class BodyMutation {
     protected Body body;
@@ -38,5 +40,13 @@ public class BodyMutation {
         body.getUnits().remove(uReturn);
         this.body.getUnits().add(unit);
         body.getUnits().add(uReturn);
+    }
+
+    public List<ValueBox> getUseBoxes() {
+        List<ValueBox> boxes = new ArrayList<ValueBox>();
+        for (Unit unit : addedUnits) {
+            boxes.addAll(unit.getUseBoxes());
+        }
+        return boxes;
     }
 }
