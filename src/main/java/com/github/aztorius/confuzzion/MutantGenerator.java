@@ -317,38 +317,38 @@ public class MutantGenerator {
                     this.genObject(body, className);
                     break;
                 case 1: //Method call on a local
-                    if (locals.size() > 0) {
-                        Local locSel = null;
-                        int localSel = rand.nextUint(locals.size());
-                        for (Local loc : locals) {
-                            if (localSel > 0) {
-                                localSel--;
-                            } else {
-                                locSel = loc;
-                                break;
-                            }
-                        }
-                        Type type = locSel.getType();
-                        if (type instanceof RefType) {
-                            RefType refType = (RefType)type;
-                            List<SootMethod> methods = refType.getSootClass().getMethods();
-                            if (methods.size() == 0) {
-                                break;
-                            }
-                            int methodSel = rand.nextUint(methods.size());
-                            SootMethod method = methods.get(methodSel);
-                            if (method.isConstructor() || !method.isPublic()) {
-                                // We should not call the constructor twice !
-                                // nor call a non-Public method
-                                break;
-                            }
-
-                            // Call method
-                            this.genMethodCall(body, locSel, method);
-                        }
-                        // else: cannot call a method on a non-RefType object
+                    if (locals.size() <= 0) {
                         break;
                     }
+                    Local locSel = null;
+                    int localSel = rand.nextUint(locals.size());
+                    for (Local loc : locals) {
+                        if (localSel > 0) {
+                            localSel--;
+                        } else {
+                            locSel = loc;
+                            break;
+                        }
+                    }
+                    Type type = locSel.getType();
+                    if (type instanceof RefType) {
+                        RefType refType = (RefType)type;
+                        List<SootMethod> methods = refType.getSootClass().getMethods();
+                        if (methods.size() == 0) {
+                            break;
+                        }
+                        int methodSel = rand.nextUint(methods.size());
+                        SootMethod method = methods.get(methodSel);
+                        if (method.isConstructor() || !method.isPublic()) {
+                            // We should not call the constructor twice !
+                            // nor call a non-Public method
+                            break;
+                        }
+
+                        // Call method
+                        this.genMethodCall(body, locSel, method);
+                    }
+                    break;
                 default: //Cast
                     Local loc1 = Util.randomLocal(locals, rand);
                     if (loc1 == null) {
