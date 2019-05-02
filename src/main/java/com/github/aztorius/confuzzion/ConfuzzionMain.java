@@ -81,6 +81,7 @@ public class ConfuzzionMain {
                 continue;
             }
 
+            boolean loop2NoException = true;
             for (long loop2 = 0; loop2 < constants_retry || constants_retry < 0; loop2++) {
                 // Change constants in mutation units taken from a pool
                 mutation.randomConstants();
@@ -92,12 +93,23 @@ public class ConfuzzionMain {
                     }
                     // Instantiation and launch
                     currentProg.genAndLaunch(verbose);
+                    loop2NoException = true;
                     // Continue if no exception else try other constants
                     break;
                 } catch(Throwable e) {
-                    e.printStackTrace();
+                    loop2NoException = false;
+                    if (verbose) {
+                        e.printStackTrace();
+                    }
                 }
             }
+
+            if (!loop2NoException) {
+                // Try another mutation
+                mutation.undo();
+                continue;
+            }
+
             // Add contracts checks
             ArrayList<BodyMutation> contractsMutations =
                 currentProg.addContractsChecks(contracts, mutation);
