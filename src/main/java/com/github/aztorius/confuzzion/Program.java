@@ -65,7 +65,7 @@ public class Program {
         return sClass.getMethods().get(idMethod);
     }
 
-    private MethodMutation randomMethodMutation(SootMethod method) {
+    private MethodMutation randomMethodMutation(SootMethod method) throws MutationException {
         MethodMutation mutation = null;
         switch (rand.nextUint(2)) {
         case 0:
@@ -79,19 +79,19 @@ public class Program {
         return mutation;
     }
 
-    public Mutation randomMutation() {
+    public Mutation randomMutation() throws MutationException {
         Mutation mutation = null;
-        switch (rand.randLimits(0.99, 0.995, 1.0)) {
-        case 0: // P = 0,99 : Method/Body level mutation
-            SootMethod method = this.randomSootMethod();
-            mutation = this.randomMethodMutation(method);
-            break;
+        switch (rand.randLimits(0.005, 0.01, 1.0)) {
+        case 0: // P = 0,005 : Program level mutation
+            //TODO
+            //break;
         case 1: // P = 0,005 : Class level mutation
             //TODO
-            break;
-        case 2: // P = 0,005 : Program level mutation
+            //break;
+        case 2: // P = 0,99 : Method/Body level mutation
         default:
-            //TODO
+            SootMethod method = this.randomSootMethod();
+            mutation = this.randomMethodMutation(method);
             break;
         }
         return mutation;

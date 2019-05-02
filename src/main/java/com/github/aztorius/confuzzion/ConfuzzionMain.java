@@ -69,14 +69,24 @@ public class ConfuzzionMain {
         Program currentProg = new Program("Test", rand);
 
         for (long loop1 = 0; loop1 < mainloop_turn || mainloop_turn < 0; loop1++) {
-            // Random mutation (program level | class level | method level)
-            Mutation mutation = currentProg.randomMutation();
+            Mutation mutation = null;
+
+            try {
+                // Random mutation (program level | class level | method level)
+                mutation = currentProg.randomMutation();
+            } catch (MutationException e) {
+                if (verbose) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+
             for (long loop2 = 0; loop2 < constants_retry || constants_retry < 0; loop2++) {
                 // Change constants in mutation units taken from a pool
                 mutation.randomConstants();
                 try {
                     if (verbose) {
-                        System.out.println(
+                        System.err.println(
                             "===Program Test: iter1 " + loop1 +
                             " iter2 " + loop2 + "===");
                     }
