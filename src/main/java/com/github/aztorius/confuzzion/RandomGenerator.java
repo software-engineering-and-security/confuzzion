@@ -8,6 +8,7 @@ import soot.FloatType;
 import soot.IntType;
 import soot.LongType;
 import soot.Modifier;
+import soot.Scene;
 import soot.ShortType;
 import soot.Type;
 import soot.Value;
@@ -154,11 +155,19 @@ public class RandomGenerator {
         return types[this.nextUint() % types.length];
     }
 
+    public Type randRefType() {
+        String strClass = strClasses.get(this.nextUint(strClasses.size()));
+        Scene.v().loadClassAndSupport(strClass);
+        return Scene.v().getRefType(strClass);
+    }
+
     public Type randType(Boolean canBeVoid) {
         if (rand.nextBoolean() && canBeVoid) {
             return VoidType.v();
-        } else {
+        } else if (rand.nextBoolean()) {
             return this.randPrimType();
+        } else {
+            return this.randRefType();
         }
     }
 
