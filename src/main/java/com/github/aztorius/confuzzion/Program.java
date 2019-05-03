@@ -33,16 +33,22 @@ public class Program {
         ArrayList<Contract> contracts,
         Mutation mutation) {
         Body body = null;
+        ArrayList<BodyMutation> mutations = new ArrayList<BodyMutation>();
+
         if (mutation instanceof MethodMutation) {
             // Get the body and put checks at the end
             MethodMutation mMutation = (MethodMutation)mutation;
             body = mMutation.getBody();
-        } else {
-            // TODO: if ClassMutation, put checks inside constructors
+        } else if (mutation instanceof ClassMutation) {
+            // TODO: put checks inside constructors
+            return mutations; //TODO: remove
+        } else if (mutation instanceof ProgramMutation) {
             // TODO: if ProgramMutation, put checks somewhere ?
+            return mutations; //TODO: remove
+        } else {
             throw new IllegalArgumentException("mutation is unknown");
         }
-        ArrayList<BodyMutation> mutations = new ArrayList<BodyMutation>();
+
         for (Contract contract : contracts) {
             // Apply contract check on the body
             mutations.add(contract.applyCheck(body));
@@ -59,10 +65,14 @@ public class Program {
     }
 
     private SootMethod randomSootMethod() {
-        int idMutant = rand.nextUint(mutants.size());
-        SootClass sClass = mutants.get(idMutant).getSootClass();
+        SootClass sClass = this.randomSootClass();
         int idMethod = rand.nextUint(sClass.getMethods().size());
         return sClass.getMethods().get(idMethod);
+    }
+
+    private SootClass randomSootClass() {
+        int idMutant = rand.nextUint(mutants.size());
+        return mutants.get(idMutant).getSootClass();
     }
 
     private MethodMutation randomMethodMutation(SootMethod method) throws MutationException {
@@ -79,15 +89,27 @@ public class Program {
         return mutation;
     }
 
+    private ClassMutation randomClassMutation(SootClass sootClass) throws MutationException {
+        ClassMutation mutation = null;
+        switch (rand.nextUint(1)) {
+        case 0:
+        default:
+            mutation = new AddMethodMutation(rand, sootClass);
+            break;
+        }
+        return mutation;
+    }
+
     public Mutation randomMutation() throws MutationException {
         Mutation mutation = null;
-        switch (rand.randLimits(0.005, 0.01, 1.0)) {
+        switch (rand.randLimits(0.01, 0.02, 1.0)) {
         case 0: // P = 0,005 : Program level mutation
             //TODO
             //break;
         case 1: // P = 0,005 : Class level mutation
-            //TODO
-            //break;
+            SootClass sootClass = this.randomSootClass();
+            mutation = this.randomClassMutation(sootClass);
+            break;
         case 2: // P = 0,99 : Method/Body level mutation
         default:
             SootMethod method = this.randomSootMethod();
