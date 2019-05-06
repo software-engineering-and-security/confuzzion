@@ -91,8 +91,11 @@ public class Program {
 
     private ClassMutation randomClassMutation(SootClass sootClass) throws MutationException {
         ClassMutation mutation = null;
-        switch (rand.nextUint(1)) {
+        switch (rand.nextUint(2)) {
         case 0:
+            mutation = new AddFieldMutation(rand, sootClass);
+            break;
+        case 1:
         default:
             mutation = new AddMethodMutation(rand, sootClass);
             break;
@@ -102,7 +105,7 @@ public class Program {
 
     public Mutation randomMutation() throws MutationException {
         Mutation mutation = null;
-        switch (rand.randLimits(0.01, 0.02, 1.0)) {
+        switch (rand.randLimits(0.01, 0.1, 1.0)) {
         case 0: // P = 0,005 : Program level mutation
             //TODO
             //break;
