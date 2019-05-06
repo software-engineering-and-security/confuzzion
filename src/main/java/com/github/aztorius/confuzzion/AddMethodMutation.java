@@ -1,8 +1,11 @@
 package com.github.aztorius.confuzzion;
 
+import soot.Local;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Type;
+import soot.Value;
+import soot.VoidType;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
 
@@ -13,7 +16,7 @@ public class AddMethodMutation extends ClassMutation {
 
     private SootMethod addedMethod;
 
-    public AddMethodMutation(RandomGenerator rand, SootClass sootClass) {
+    public AddMethodMutation(RandomGenerator rand, SootClass sootClass) throws MutationException {
         super(rand, sootClass);
 
         String name = "method" + rand.nextIncrement();
@@ -37,7 +40,48 @@ public class AddMethodMutation extends ClassMutation {
                                      thrownExceptions);
         JimpleBody body = Jimple.v().newBody(addedMethod);
         addedMethod.setActiveBody(body);
-        body.getUnits().add(Jimple.v().newReturnVoidStmt());
+
+        if (!addedMethod.isStatic()) {
+            //Add "this" local
+            Local thisLocal = Jimple.v().newLocal("this", sootClass.getType());
+            body.getLocals().add(thisLocal);
+            body.getUnits().add(
+                Jimple.v().newIdentityStmt(thisLocal,
+                                           Jimple.v().newThisRef(sootClass.getType())));
+        }
+
+        // Add locals for parameters
+        for (int i = 0; i < parameterTypes.size(); i++) {
+            Local paramLocal = Jimple.v().newLocal("param" + i, parameterTypes.get(i));
+            body.getLocals().add(paramLocal);
+            body.getUnits().add(
+                Jimple.v().newIdentityStmt(paramLocal,
+                                           Jimple.v().newParameterRef(parameterTypes.get(i), i)));
+        }
+
+        if (returnType == VoidType.v()) {
+            body.getUnits().add(Jimple.v().newReturnVoidStmt());
+        } else {
+            // TODO: add local for return stmt
+            Value val = null;
+            for (Local loc : body.getLocals()) {
+                if (loc.getType() == returnType) {
+                    val = loc;
+                }
+            }
+
+            if (val == null) {
+                val = rand.randConstant(returnType);
+            }
+
+            if (val == null) {
+                //val = this.genObject
+                throw new MutationException("Cannot build object type " + returnType.toString());
+            }
+
+            body.getUnits().add(Jimple.v().newReturnStmt(val));
+        }
+
         sootClass.addMethod(addedMethod);
     }
 
