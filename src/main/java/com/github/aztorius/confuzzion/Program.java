@@ -29,6 +29,17 @@ public class Program {
         this.mutants.add(firstMutant);
     }
 
+    public Mutant genNewClass() {
+        MutantGenerator generator = new MutantGenerator(rand, classBaseName + mutants.size());
+        Mutant addedMutant = generator.genEmptyClass();
+        this.mutants.add(addedMutant);
+        return addedMutant;
+    }
+
+    public void removeClass(Mutant mutant) {
+        mutants.remove(mutant);
+    }
+
     public ArrayList<BodyMutation> addContractsChecks(
         ArrayList<Contract> contracts,
         Mutation mutation) {
@@ -103,12 +114,23 @@ public class Program {
         return mutation;
     }
 
+    private ProgramMutation randomProgramMutation() throws MutationException {
+        ProgramMutation mutation = null;
+        switch (rand.nextUint(1)) {
+        case 0:
+        default:
+            mutation = new AddClassMutation(rand, this);
+            break;
+        }
+        return mutation;
+    }
+
     public Mutation randomMutation() throws MutationException {
         Mutation mutation = null;
-        switch (rand.randLimits(0.01, 0.1, 1.0)) {
+        switch (rand.randLimits(0.1, 0.2, 1.0)) {
         case 0: // P = 0,005 : Program level mutation
-            //TODO
-            //break;
+            mutation = this.randomProgramMutation();
+            break;
         case 1: // P = 0,005 : Class level mutation
             SootClass sootClass = this.randomSootClass();
             mutation = this.randomClassMutation(sootClass);
