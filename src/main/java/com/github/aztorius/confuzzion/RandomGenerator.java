@@ -41,6 +41,7 @@ public class RandomGenerator {
         strClasses.add("java.io.ByteArrayOutputStream");
         strClasses.add("java.util.concurrent.ForkJoinPool");
         strClasses.add("java.lang.invoke.MethodHandles");
+        strClasses.add("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
     }
 
     public String getClassName() {
@@ -182,15 +183,18 @@ public class RandomGenerator {
             modifiers |= Modifier.FINAL;
         }
 
-        switch (this.nextUint() % 3) {
-            case 0:
-                modifiers |= Modifier.PUBLIC;
-                break;
-            case 1:
-                modifiers |= Modifier.PRIVATE;
-                break;
-            default:
-                modifiers |= Modifier.PROTECTED;
+        switch (this.nextUint() % 4) {
+        case 0:
+            /* no modifier : java default */
+            break;
+        case 1:
+            modifiers |= Modifier.PUBLIC;
+            break;
+        case 2:
+            modifiers |= Modifier.PRIVATE;
+            break;
+        default:
+            modifiers |= Modifier.PROTECTED;
         }
 
         return modifiers;
