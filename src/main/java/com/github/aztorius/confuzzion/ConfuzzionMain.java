@@ -5,6 +5,7 @@ import java.lang.InstantiationException;
 import java.lang.NoSuchMethodException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Timer;
 
 public class ConfuzzionMain {
     public static void main(String args[]) {
@@ -31,7 +32,7 @@ public class ConfuzzionMain {
                 }
             }
             ConfuzzionMain conf = new ConfuzzionMain();
-            conf.startMutation(const_loop_iterations, main_loop_iterations, true);
+            conf.startMutation(const_loop_iterations, main_loop_iterations, false);
         } else if (args[0].equals("generate")) {
             long main_loop_iterations = 10;
             ConfuzzionMain conf = new ConfuzzionMain();
@@ -49,16 +50,18 @@ public class ConfuzzionMain {
     }
 
     public void startGeneration(long mainloop_turn, boolean verbose) {
-        //TODO
-        // RandomGenerator rand = new RandomGenerator();
-        // MutantGenerator generator = new MutantGenerator(rand, "Test");
-        // ArrayList<Contract> contracts = new ArrayList<Contract>();
-        // contracts.add(new ContractTypeConfusion());
-        //
-        // for (long loop1 = 0; loop1 < mainloop_turn; loop1++) {
-        //     generator.generate();
-        //     Mutant mutant = generator.addContractsChecks(contracts);
-        // }
+        RandomGenerator rand = new RandomGenerator();
+        MutantGenerator generator = new MutantGenerator(rand, "Test");
+        ArrayList<Contract> contracts = new ArrayList<Contract>();
+        contracts.add(new ContractTypeConfusion());
+
+        for (long loop1 = 0; loop1 < mainloop_turn; loop1++) {
+            if (verbose) {
+                System.out.println("===Loop " + loop1 + "===");
+            }
+            generator.generate();
+            Mutant mutant = generator.addContractsChecks(contracts);
+        }
     }
 
     public void startMutation(long constants_retry, long mainloop_turn, boolean verbose) {
@@ -67,6 +70,11 @@ public class ConfuzzionMain {
         contracts.add(new ContractTypeConfusion());
 
         Program currentProg = new Program("Test", rand);
+
+        // Refresh Status in command line each second
+        Timer timer = new Timer();
+        Status status = new Status();
+        timer.schedule(status, 0, 1000);
 
         for (long loop1 = 0; loop1 < mainloop_turn || mainloop_turn < 0; loop1++) {
             Mutation mutation = null;
@@ -82,7 +90,8 @@ public class ConfuzzionMain {
             }
 
             boolean loop2NoException = true;
-            for (long loop2 = 0; loop2 < constants_retry || constants_retry < 0; loop2++) {
+            long loop2 = 0;
+            for (loop2 = 0; loop2 < constants_retry || constants_retry < 0; loop2++) {
                 // Change constants in mutation units taken from a pool
                 mutation.randomConstants();
                 try {
@@ -107,6 +116,7 @@ public class ConfuzzionMain {
             if (!loop2NoException) {
                 // Try another mutation
                 mutation.undo();
+                status.newMutation(mutation.getClass(), false, false, loop2 + 1);
                 continue;
             }
 
@@ -118,19 +128,27 @@ public class ConfuzzionMain {
                 currentProg.genAndLaunch(verbose);
                 // Remove contracts checks for next turn
                 currentProg.removeContractsChecks(contractsMutations);
+                // Update status screen
+                status.newMutation(mutation.getClass(), true, false, loop2 + 2);
             } catch(ContractCheckException e) {
                 // TODO: add the program source code to the result list
                 // save the resulting class file ?
                 // Remove contracts checks
                 currentProg.removeContractsChecks(contractsMutations);
                 e.printStackTrace();
+                // Update status screen
+                status.newMutation(mutation.getClass(), false, true, loop2 + 2);
             } catch(Throwable e) {
                 // Remove contracts checks
                 currentProg.removeContractsChecks(contractsMutations);
                 // Bad sample, revert mutation
                 mutation.undo();
                 e.printStackTrace();
+                // Update status screen
+                status.newMutation(mutation.getClass(), false, false, loop2 + 2);
             }
         }
+
+        timer.cancel();
     }
 }
