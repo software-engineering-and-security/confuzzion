@@ -39,13 +39,16 @@ public class Status extends TimerTask {
         if (success) {
             Long lSuccess = successMutations.get(index);
             lSuccess++;
+            successMutations.set(index, lSuccess);
         } else {
             Long lFailed = failedMutations.get(index);
             lFailed++;
+            failedMutations.set(index, lFailed);
         }
         if (violates) {
             Long lViolations = contractViolations.get(index);
             lViolations++;
+            contractViolations.set(index, lViolations);
         }
     }
 
@@ -69,6 +72,13 @@ public class Status extends TimerTask {
             totalMutations,
             executionsFromLastSecond,
             mutationsFromLastSecond);
+        for (int i = 0; i < mutations.size(); i++) {
+            str += String.format("%s | %d | %d | %d%n",
+                    mutations.get(i).getName(),
+                    successMutations.get(i),
+                    failedMutations.get(i),
+                    contractViolations.get(i));
+        }
 
         mutationsFromLastSecond = 0;
         executionsFromLastSecond = 0;
