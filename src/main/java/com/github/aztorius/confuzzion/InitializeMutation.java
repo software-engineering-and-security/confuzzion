@@ -42,6 +42,7 @@ public class InitializeMutation extends MethodMutation {
 
         if (val == null) {
             throw new MutationException(InitializeMutation.class,
+                    this.mutation,
                     "Cannot generate a value for type " + type.toString());
         }
 

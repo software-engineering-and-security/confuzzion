@@ -86,6 +86,7 @@ public class ConfuzzionMain {
                 if (verbose) {
                     e.printStackTrace();
                 }
+                e.undoMutation();
                 status.newMutation(e.getMutationClass(), false, false, 0);
                 continue;
             }

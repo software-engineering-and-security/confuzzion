@@ -16,6 +16,7 @@ public class CallMethodMutation extends MethodMutation {
         Local local = Util.randomLocalRef(body.getLocals(), rand);
         if (local == null) {
             throw new MutationException(CallMethodMutation.class,
+                    this.mutation,
                     "No local reference found");
         }
 
@@ -24,6 +25,7 @@ public class CallMethodMutation extends MethodMutation {
         List<SootMethod> methods = sClass.getMethods();
         if (methods.size() == 0) {
             throw new MutationException(CallMethodMutation.class,
+                    this.mutation,
                     "No method available on object " + local.toString());
         }
 
@@ -40,6 +42,7 @@ public class CallMethodMutation extends MethodMutation {
 
         if (availableMethods.size() == 0) {
             throw new MutationException(CallMethodMutation.class,
+                    this.mutation,
                     "No public method available on object " + local.toString());
         }
 
