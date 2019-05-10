@@ -380,6 +380,10 @@ public class MutantGenerator {
 
             if (val == null) {
                 val = rand.randConstant(returnType);
+
+                if (val == null) {
+                    val = this.genObject(body, returnType.toString());
+                }
             }
 
             units.add(Jimple.v().newReturnStmt(val));
