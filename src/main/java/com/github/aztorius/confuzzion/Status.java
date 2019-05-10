@@ -13,6 +13,13 @@ public class Status extends TimerTask {
     private ArrayList<Long> contractViolations;
     private ArrayList<Class<?>> mutations;
 
+    private static String template =
+        "\033[H\033[2J" +
+        "Confuzzion%n%n" +
+        "%10d total execs | %10d total mutations%n" +
+        "%10d     execs/s | %10d     mutations/s%n%n" +
+        "       Mutation type |    Success |      Fails | Violations |%n";
+
     public Status() {
         this.mutations = new ArrayList<Class<?>>();
         successMutations = new ArrayList<Long>();
@@ -62,19 +69,14 @@ public class Status extends TimerTask {
         totalMutations += mutationsFromLastSecond;
         totalExecutions += executionsFromLastSecond;
 
-        String template =
-            "\033[H\033[2J" +
-            "Confuzzion :\n" +
-            "%d total execs | %d total mutations\n" +
-            "%d execs/s | %d mutations/s\n";
-        String str = String.format(template,
+        String str = String.format(Status.template,
             totalExecutions,
             totalMutations,
             executionsFromLastSecond,
             mutationsFromLastSecond);
         for (int i = 0; i < mutations.size(); i++) {
-            str += String.format("%s | %d | %d | %d%n",
-                    mutations.get(i).getName(),
+            str += String.format("%20s | %10d | %10d | %10d |%n",
+                    mutations.get(i).getSimpleName(),
                     successMutations.get(i),
                     failedMutations.get(i),
                     contractViolations.get(i));
