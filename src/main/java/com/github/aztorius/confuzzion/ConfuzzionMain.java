@@ -86,6 +86,7 @@ public class ConfuzzionMain {
                 if (verbose) {
                     e.printStackTrace();
                 }
+                status.newMutation(e.getMutationClass(), false, false, 0);
                 continue;
             }
 
@@ -148,7 +149,9 @@ public class ConfuzzionMain {
                 status.newMutation(mutation.getClass(), false, false, loop2 + 2);
             }
         }
-
+        // Stop automatic call to status.run()
         timer.cancel();
+        // Print a last time the status screen
+        status.run();
     }
 }

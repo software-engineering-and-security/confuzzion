@@ -76,7 +76,8 @@ public class AddMethodMutation extends ClassMutation {
 
             if (val == null) {
                 //val = this.genObject
-                throw new MutationException("Cannot build object type " + returnType.toString());
+                throw new MutationException(AddMethodMutation.class,
+                        "Cannot build object type " + returnType.toString());
             }
 
             body.getUnits().add(Jimple.v().newReturnStmt(val));
