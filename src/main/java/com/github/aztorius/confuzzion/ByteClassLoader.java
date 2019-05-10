@@ -7,13 +7,8 @@ public class ByteClassLoader extends ClassLoader {
         super(parent);
     }
 
-    public Class<?> load(String className, byte[] data) {
-        try {
-            this.defineClass(className, data, 0, data.length, null);
-            return this.loadClass(className);
-        } catch(ClassNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
+    public Class<?> load(String className, byte[] data) throws ClassNotFoundException {
+        this.defineClass(className, data, 0, data.length, null);
+        return this.loadClass(className);
     }
 }
