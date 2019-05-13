@@ -1,3 +1,4 @@
+confuzzionResults/
 target/
 fuzz-results
 **/*.class
