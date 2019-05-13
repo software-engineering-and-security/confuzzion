@@ -1,15 +1,35 @@
 package com.github.aztorius.confuzzion;
 
+import java.io.IOException;
 import java.lang.IllegalAccessException;
 import java.lang.InstantiationException;
 import java.lang.NoSuchMethodException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Timer;
 
 public class ConfuzzionMain {
+    private Path resultFolder;
+
+    public ConfuzzionMain(Path resultFolder) {
+        this.resultFolder = resultFolder;
+    }
+
     public static void main(String args[]) {
         //TODO: add support for verbose option
+        //TODO: add support for custom resultFolder option
+        Path resultFolder = Paths.get("confuzzionResults/");
+        try {
+            Files.createDirectories(resultFolder);
+        } catch(IOException e) {
+            System.err.println("Error while creating result directory. Check permissions and path.");
+            System.err.println("Path: " + resultFolder);
+            return;
+        }
+
         if (args.length < 1 || args.length > 3) {
             ConfuzzionMain.printHelp();
         } else if (args[0].equals("mutate")) {
@@ -31,11 +51,11 @@ public class ConfuzzionMain {
                     return;
                 }
             }
-            ConfuzzionMain conf = new ConfuzzionMain();
+            ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
             conf.startMutation(const_loop_iterations, main_loop_iterations, false);
         } else if (args[0].equals("generate")) {
             long main_loop_iterations = 10;
-            ConfuzzionMain conf = new ConfuzzionMain();
+            ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
             conf.startGeneration(main_loop_iterations, true);
         } else {
             ConfuzzionMain.printHelp();
@@ -133,8 +153,19 @@ public class ConfuzzionMain {
                 // Update status screen
                 status.newMutation(mutation.getClass(), true, false, loop2 + 2);
             } catch(ContractCheckException e) {
-                // TODO: add the program source code to the result list
-                // save the resulting class file ?
+                // Save current classes to a unique folder
+                Path folder = Paths.get(resultFolder.toString(), loop1 + "-" + loop2);
+                try {
+                    Files.createDirectories(folder);
+                } catch(IOException e2) {
+                    e.printStackTrace();
+                    System.err.println("Error while creating result directory. Check permissions and path.");
+                    System.err.println("Path: " + folder);
+                    System.err.println("Printing last program generated");
+                    System.err.println(currentProg.toString());
+                    break;
+                }
+                currentProg.saveToFolder(folder.toString());
                 // Remove contracts checks
                 currentProg.removeContractsChecks(contractsMutations);
                 e.printStackTrace();

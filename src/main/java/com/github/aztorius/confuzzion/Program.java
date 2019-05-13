@@ -153,7 +153,7 @@ public class Program {
                 System.out.println("===Class " + classBaseName + i + "===");
                 mut.toStdOut();
             }
-            byte[] array = mut.toClass(mut.getSootClass());
+            byte[] array = mut.toClass();
             ByteClassLoader loader = new ByteClassLoader(
                 Thread.currentThread().getContextClassLoader());
             Class<?> clazz = loader.load(classBaseName + i, array);
@@ -161,5 +161,21 @@ public class Program {
             clazz.newInstance();
             //TODO: invoke methods ?: method.invoke(clazz.newInstance());
         }
+    }
+
+    public void saveToFolder(String folder) {
+        for (Mutant mut : mutants) {
+            mut.toClassFile(folder);
+            mut.toJimpleFile(folder);
+        }
+    }
+
+    @Override
+    public String toString() {
+        String str = new String();
+        for (Mutant mut : mutants) {
+            str += mut.toString();
+        }
+        return str;
     }
 }

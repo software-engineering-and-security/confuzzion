@@ -16,6 +16,8 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,9 +41,8 @@ public class Mutant {
         sClass = clazz;
     }
 
-    public String toClassFile(SootClass sClass) {
-        String fileName = SourceLocator.v().getFileNameFor(sClass,
-            Options.output_format_class);
+    public String toClassFile(String folder) {
+        String fileName = Paths.get(folder, sClass.getShortName()).toString() + ".class";
         try {
             OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
@@ -55,7 +56,7 @@ public class Mutant {
         return fileName;
     }
 
-    public byte[] toClass(SootClass sClass) {
+    public byte[] toClass() {
         String className = sClass.getShortName();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         OutputStream streamOut = new JasminOutputStream(stream);
@@ -75,9 +76,8 @@ public class Mutant {
         return classContent;
     }
 
-    public String toJimple(SootClass sClass) {
-        String fileName = SourceLocator.v().getFileNameFor(sClass,
-            Options.output_format_jimple);
+    public String toJimpleFile(String folder) {
+        String fileName = Paths.get(folder, sClass.getShortName()).toString() + ".jimple";
         try {
             OutputStream streamOut = new FileOutputStream(fileName);
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
@@ -95,5 +95,14 @@ public class Mutant {
         PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
         Printer.v().printTo(sClass, writerOut);
         writerOut.flush();
+    }
+
+    @Override
+    public String toString() {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(buffer));
+        Printer.v().printTo(sClass, writerOut);
+        writerOut.flush();
+        return new String(buffer.toByteArray(), Charset.forName("UTF-8"));
     }
 }
