@@ -29,7 +29,12 @@ public class AddFieldMutation extends ClassMutation {
             meth = sootClass.getMethodByName("<init>");
         }
 
-        initializeMutation = new InitializeMutation(rand, meth, addedField);
+        try {
+            initializeMutation = new InitializeMutation(rand, meth, addedField);
+        } catch(MutationException e) {
+            sootClass.removeField(this.addedField);
+            throw e;
+        }
     }
 
     @Override
