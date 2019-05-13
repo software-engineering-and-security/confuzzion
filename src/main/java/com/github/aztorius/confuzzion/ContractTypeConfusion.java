@@ -13,6 +13,7 @@ import soot.UnitPatchingChain;
 import soot.Value;
 import soot.jimple.ClassConstant;
 import soot.jimple.Jimple;
+import soot.jimple.NullConstant;
 import soot.util.Chain;
 
 import java.util.ArrayList;
@@ -42,6 +43,13 @@ public class ContractTypeConfusion extends Contract {
             RefType refType = (RefType)type;
             SootClass sClass = refType.getSootClass();
 
+            Unit uNop = Jimple.v().newNopStmt();
+            // Check that local is not null, else abort contract checking
+            mutation.addUnit(
+                Jimple.v().newIfStmt(
+                    Jimple.v().newEqExpr(local, NullConstant.v()),
+                    uNop));
+
             // Get the class
             Local locClass =
                 Jimple.v().newLocal("contracttc" + a++, clazz.getType());
@@ -65,7 +73,6 @@ public class ContractTypeConfusion extends Contract {
 
             // if isInstance return 0 then jump at the end
             // else throw Exception
-            Unit uNop = Jimple.v().newNopStmt();
             mutation.addUnit(
                 Jimple.v().newIfStmt(
                     Jimple.v().newNeExpr(locBoolResult,
