@@ -32,11 +32,12 @@ public class CallMethodMutation extends MethodMutation {
         List<SootMethod> availableMethods = new ArrayList<SootMethod>();
         for (SootMethod m : methods) {
             // We should not call the constructor twice !
-            // nor call a non-Public method
+            // nor call a non-Public method on an external class
             if (!m.isConstructor() &&
-                m.isPublic() &&
                 !m.getName().startsWith("<")) {
-                availableMethods.add(m);
+                if (sClass == method.getDeclaringClass() || m.isPublic()) {
+                    availableMethods.add(m);
+                }
             }
         }
 
