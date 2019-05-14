@@ -18,6 +18,8 @@ public class Program {
     private ArrayList<Mutant> mutants;
     private RandomGenerator rand;
 
+    private static long MUTANTS_NUMBER_LIMIT = 10;
+
     /**
      * Program constructor
      * @param classBaseName the base name of all classes inside this program
@@ -166,8 +168,11 @@ public class Program {
         Mutation mutation = null;
         switch (rand.randLimits(0.01, 0.05, 1.0)) {
         case 0: // P = 0,005 : Program level mutation
-            mutation = this.randomProgramMutation();
-            break;
+            if (mutants.size() < Program.MUTANTS_NUMBER_LIMIT) {
+                mutation = this.randomProgramMutation();
+                break;
+            }
+            // else fall through
         case 1: // P = 0,005 : Class level mutation
             SootClass sootClass = this.randomSootClass();
             mutation = this.randomClassMutation(sootClass);
