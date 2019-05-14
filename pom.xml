@@ -34,6 +34,12 @@
 
   <build>
       <plugins>
+          <!-- The Maven Javadoc Plugin to generate javadoc -->
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-javadoc-plugin</artifactId>
+              <version>3.1.0</version>
+          </plugin>
           <!-- The Maven Assembly plugin to build a jar file -->
           <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
