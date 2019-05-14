@@ -13,11 +13,15 @@ import soot.ShortType;
 import soot.Type;
 import soot.Value;
 import soot.VoidType;
+import soot.jimple.ClassConstant;
 
 import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Random;
 
+/**
+ * A Random Generator with custom methods for Soot objects
+ */
 public class RandomGenerator {
     private Random rand;
     private long counter;
@@ -42,6 +46,10 @@ public class RandomGenerator {
         strClasses.add("java.util.concurrent.ForkJoinPool");
         strClasses.add("java.lang.invoke.MethodHandles");
         strClasses.add("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
+    }
+
+    public void addStrClass(String className) {
+        strClasses.add(className);
     }
 
     public String getClassName() {
@@ -114,6 +122,11 @@ public class RandomGenerator {
         return i;
     }
 
+    /**
+     * Randomly generate a constant for the appropriate type
+     * @param  type Type of the constant
+     * @return      Value that is a constant of appropriate type
+     */
     public Value randConstant(Type type) {
         Value val = null;
 
@@ -134,13 +147,21 @@ public class RandomGenerator {
         } else if (type == ShortType.v()) {
             val = soot.jimple.IntConstant.v(this.getIntFromPool(poolInt));
         } else {
-            //TODO: not a primitive type and not in a local
-            //System.out.println("DEBUG: RG: Not a primitive type for constant generation");
+            // Should not happen !
         }
 
         return val;
     }
 
+    public Value randClass() {
+        String classString = strClasses.get(this.nextUint(strClasses.size()));
+        return ClassConstant.v(classString.replace(".", "/"));
+    }
+
+    /**
+     * Randomly select a primitive type
+     * @return A random primitive type
+     */
     public Type randPrimType() {
         Type[] types = {
             BooleanType.v(),
@@ -162,6 +183,11 @@ public class RandomGenerator {
         return Scene.v().getRefType(strClass);
     }
 
+    /**
+     * Randomly choose a type between VoidType, RefType and PrimType
+     * @param  canBeVoid if true result may be VoidType
+     * @return           random type
+     */
     public Type randType(Boolean canBeVoid) {
         if (rand.nextBoolean() && canBeVoid) {
             return VoidType.v();
@@ -172,6 +198,11 @@ public class RandomGenerator {
         }
     }
 
+    /**
+     * Randomly choose modifiers
+     * @param  canBeStatic if true result may have the static modifier
+     * @return             random modifiers
+     */
     public int randModifiers(Boolean canBeStatic) {
         int modifiers = 0;
 
