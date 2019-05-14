@@ -80,6 +80,20 @@ public abstract class MethodMutation extends Mutation {
             return null;
         }
 
+        // In case its a spcial Class object
+        if (clazz.getName().equals("java.lang.Class")) {
+            // Create local
+            Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(),
+                                            clazz.getType());
+            mutation.addLocal(loc);
+            // Assign local value
+            mutation.addUnit(
+                Jimple.v().newAssignStmt(loc,
+                                         rand.randClass()));
+
+            return loc;
+        }
+
         if (clazz.isEnum()) {
             int choice = rand.nextUint() % clazz.getFields().size();
             int i = 0;
