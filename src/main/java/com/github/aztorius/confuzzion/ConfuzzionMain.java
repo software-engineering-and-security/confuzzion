@@ -19,53 +19,96 @@ public class ConfuzzionMain {
     }
 
     public static void main(String args[]) {
-        //TODO: add support for verbose option
-        //TODO: add support for custom resultFolder option
-        Path resultFolder = Paths.get("confuzzionResults/");
-        try {
-            Files.createDirectories(resultFolder);
-        } catch(IOException e) {
-            System.err.println("Error while creating result directory. Check permissions and path.");
-            System.err.println("Path: " + resultFolder);
-            return;
-        }
-
-        if (args.length < 1 || args.length > 3) {
+        if (args.length < 1) {
             ConfuzzionMain.printHelp();
-        } else if (args[0].equals("mutate")) {
+        } else if (args[0].equals("mut")) {
+            int iterArgs = 1;
             long const_loop_iterations = 10;
-            long main_loop_iterations = 10;
-            if (args.length == 3) {
-                try {
-                    const_loop_iterations = Long.parseLong(args[2]);
-                } catch(NumberFormatException e) {
-                    ConfuzzionMain.printHelp();
-                    return;
-                }
+            long main_loop_iterations = 1000;
+
+            String main_loop_iterations_str =
+                ConfuzzionMain.parseOption(args, "-m");
+            if (main_loop_iterations_str != null) {
+                main_loop_iterations = Long.parseLong(main_loop_iterations_str);
             }
-            if (args.length >= 2) {
-                try {
-                    main_loop_iterations = Long.parseLong(args[1]);
-                } catch(NumberFormatException e) {
-                    ConfuzzionMain.printHelp();
-                    return;
-                }
+
+            String const_loop_iterations_str =
+                ConfuzzionMain.parseOption(args, "-c");
+            if (const_loop_iterations_str != null) {
+                const_loop_iterations = Long.parseLong(const_loop_iterations_str);
             }
+
+            boolean verbose = ConfuzzionMain.parseVerbose(args);
+            Path resultFolder = ConfuzzionMain.parseDirectory(args);
             ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
-            conf.startMutation(const_loop_iterations, main_loop_iterations, false);
-        } else if (args[0].equals("generate")) {
+            conf.startMutation(const_loop_iterations,
+                main_loop_iterations,
+                verbose);
+        } else if (args[0].equals("gen")) {
             long main_loop_iterations = 10;
+            String main_loop_iterations_str =
+                ConfuzzionMain.parseOption(args, "-m");
+            if (main_loop_iterations_str != null) {
+                main_loop_iterations = Long.parseLong(main_loop_iterations_str);
+            }
+            boolean verbose = ConfuzzionMain.parseVerbose(args);
+            Path resultFolder = ConfuzzionMain.parseDirectory(args);
             ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
-            conf.startGeneration(main_loop_iterations, true);
+            conf.startGeneration(main_loop_iterations, verbose);
         } else {
             ConfuzzionMain.printHelp();
         }
     }
 
+    private static boolean parseVerbose(String[] args) {
+        for (String arg : args) {
+            if (arg.equals("-v")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Path parseDirectory(String[] args) {
+        String folderOption = ConfuzzionMain.parseOption(args, "-o");
+        Path resultFolder = null;
+
+        if (folderOption == null) {
+            resultFolder = Paths.get("confuzzionResults/");
+        } else {
+            resultFolder = Paths.get(folderOption);
+        }
+
+        try {
+            Files.createDirectories(resultFolder);
+        } catch(IOException e) {
+            System.err.println(
+                "Error while creating result directory." +
+                "Check permissions and path.");
+            System.err.println("Path: " + resultFolder);
+        }
+
+        return resultFolder;
+    }
+
+    private static String parseOption(String[] args, String option) {
+        for (int i = 1; i < args.length; i++) {
+            if (args[i].equals(option)) {
+                i++;
+                if (i >= args.length) {
+                    break;
+                }
+                return args[i];
+            }
+        }
+
+        return null;
+    }
+
     private static void printHelp() {
         System.err.println(
-            "Usage: mutate [MAIN_LOOP_ITERATIONS] [CONST_LOOP_ITERATIONS]\n" +
-            "       generate [MAIN_LOOP_ITERATIONS]"
+            "Usage: mut [-v] [-o directory] [-m MAIN_LOOP_ITERATIONS] [-c CONST_LOOP_ITERATIONS]\n" +
+            "       gen [-v] [-m MAIN_LOOP_ITERATIONS]"
         );
     }
 
@@ -154,12 +197,16 @@ public class ConfuzzionMain {
                 status.newMutation(mutation.getClass(), true, false, loop2 + 2);
             } catch(ContractCheckException e) {
                 // Save current classes to a unique folder
-                Path folder = Paths.get(resultFolder.toString(), loop1 + "-" + loop2);
+                Path folder = Paths.get(
+                    resultFolder.toString(),
+                    loop1 + "-" + loop2);
                 try {
                     Files.createDirectories(folder);
                 } catch(IOException e2) {
                     e.printStackTrace();
-                    System.err.println("Error while creating result directory. Check permissions and path.");
+                    System.err.println(
+                        "Error while creating result directory." +
+                        "Check permissions and path.");
                     System.err.println("Path: " + folder);
                     System.err.println("Printing last program generated");
                     System.err.println(currentProg.toString());

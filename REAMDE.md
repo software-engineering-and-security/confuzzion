@@ -15,10 +15,10 @@ mvn exec:java
 ## Usage
 
 To use mutation algorithm with 10 rounds for main and constant loops :
-`./fuzz.sh mutate 10 10`
+`./fuzz.sh mut -m 10 -c 10`
 
 Tu use mutation algorithm with infinite rounds :
-`./fuzz.sh mutate -1 -1`
+`./fuzz.sh mut -m -1 -c -1`
 
 Tu use generation algorithm with infinite rounds :
-`./fuzz.sh generate -1`
+`./fuzz.sh gen -m -1`
