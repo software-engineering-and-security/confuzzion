@@ -7,7 +7,8 @@ import soot.SootMethod;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-/* A Program is a collection of classes with at least one "main" class.
+/**
+ * A Program is a collection of classes with at least one "main" class.
  * Each class is represented as a Mutant that can evolve.
  * The evolution is represented as a Mutation and apply only to one of the
  * Mutant.
@@ -17,6 +18,11 @@ public class Program {
     private ArrayList<Mutant> mutants;
     private RandomGenerator rand;
 
+    /**
+     * Program constructor
+     * @param classBaseName the base name of all classes inside this program
+     * @param rand          the RandomGenerator that will be used
+     */
     public Program(String classBaseName, RandomGenerator rand) {
         // Initialize class fields
         this.classBaseName = classBaseName;
@@ -27,12 +33,14 @@ public class Program {
         MutantGenerator generator = new MutantGenerator(rand, classBaseName + "0");
         Mutant firstMutant = generator.genEmptyClass();
         this.mutants.add(firstMutant);
+        this.rand.addStrClass(firstMutant.getClassName());
     }
 
     public Mutant genNewClass() {
         MutantGenerator generator = new MutantGenerator(rand, classBaseName + mutants.size());
         Mutant addedMutant = generator.genEmptyClass();
         this.mutants.add(addedMutant);
+        this.rand.addStrClass(addedMutant.getClassName());
         return addedMutant;
     }
 
@@ -41,8 +49,8 @@ public class Program {
     }
 
     public ArrayList<BodyMutation> addContractsChecks(
-        ArrayList<Contract> contracts,
-        Mutation mutation) {
+            ArrayList<Contract> contracts,
+            Mutation mutation) {
         Body body = null;
         ArrayList<BodyMutation> mutations = new ArrayList<BodyMutation>();
 
@@ -68,6 +76,10 @@ public class Program {
         return mutations;
     }
 
+    /**
+     * Remove all contracts checks that were previously applied.
+     * @param mutations an ArrayList of the BodyMutations that were done
+     */
     public void removeContractsChecks(ArrayList<BodyMutation> mutations) {
         // Remove contracts checks
         for (BodyMutation mutation : mutations) {
@@ -86,7 +98,14 @@ public class Program {
         return mutants.get(idMutant).getSootClass();
     }
 
-    private MethodMutation randomMethodMutation(SootMethod method) throws MutationException {
+    /**
+     * Randomly choose and apply a MethodMutation
+     * @param  method            the SootMethod which will be mutated
+     * @return                   a MethodMutation
+     * @throws MutationException if mutation failed
+     */
+    private MethodMutation randomMethodMutation(SootMethod method)
+            throws MutationException {
         MethodMutation mutation = null;
         switch (rand.randLimits(0.1, 1.0)) {
         case 0:
@@ -100,7 +119,14 @@ public class Program {
         return mutation;
     }
 
-    private ClassMutation randomClassMutation(SootClass sootClass) throws MutationException {
+    /**
+     * Randomly choose and apply a ClassMutation
+     * @param  sootClass         the SootClass which will be mutated
+     * @return                   a ClassMutation
+     * @throws MutationException if mutation failed
+     */
+    private ClassMutation randomClassMutation(SootClass sootClass)
+            throws MutationException {
         ClassMutation mutation = null;
         switch (rand.randLimits(0.5, 1.0)) {
         case 0:
@@ -114,6 +140,11 @@ public class Program {
         return mutation;
     }
 
+    /**
+     * Randomly choose and apply a ProgramMutation
+     * @return a ProgramMutation
+     * @throws MutationException if mutation failed
+     */
     private ProgramMutation randomProgramMutation() throws MutationException {
         ProgramMutation mutation = null;
         switch (rand.nextUint(1)) {
@@ -125,6 +156,12 @@ public class Program {
         return mutation;
     }
 
+    /**
+     * Randomly choose and apply a Mutation between a ProgramMutation,
+     * a ClassMutation or a MethodMutation
+     * @return random Mutation
+     * @throws MutationException if mutation failed
+     */
     public Mutation randomMutation() throws MutationException {
         Mutation mutation = null;
         switch (rand.randLimits(0.01, 0.05, 1.0)) {
@@ -144,7 +181,10 @@ public class Program {
         return mutation;
     }
 
-    /* Instatiate the main class and call all methods on it.
+    /**
+     * Generate and Instantiate all Mutants inside this program
+     * @param  verbose   if true print debug info
+     * @throws Exception can throw any type of Exception from Class.newInstance()
      */
     public void genAndLaunch(boolean verbose) throws Exception {
         for (int i = mutants.size() - 1; i >= 0; i--) {
@@ -163,6 +203,10 @@ public class Program {
         }
     }
 
+    /**
+     * Save all classes of this program in a folder
+     * @param folder destination folder
+     */
     public void saveToFolder(String folder) {
         for (Mutant mut : mutants) {
             mut.toClassFile(folder);
