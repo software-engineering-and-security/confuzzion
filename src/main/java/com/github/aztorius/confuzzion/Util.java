@@ -19,32 +19,4 @@ public class Util {
     public static String abstractToConcrete(String className) {
         return childMap.get(className);
     }
-
-    public static Local randomLocal(Chain<Local> locals, RandomGenerator rand) {
-        if (locals.size() <= 0) {
-            return null;
-        }
-        int choice = rand.nextUint(locals.size());
-        for (Local loc : locals) {
-            if (choice <= 0) {
-                return loc;
-            }
-            choice--;
-        }
-        return null;
-    }
-
-    public static Local randomLocalRef(Chain<Local> locals, RandomGenerator rand) {
-        ArrayList<Local> localRefs = new ArrayList<Local>();
-        for (Local loc : locals) {
-            if (RefType.class.isInstance(loc.getType())) {
-                localRefs.add(loc);
-            }
-        }
-        if (localRefs.size() <= 0) {
-            return null;
-        }
-        int choice = rand.nextUint(localRefs.size());
-        return localRefs.get(choice);
-    }
 }

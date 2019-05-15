@@ -13,7 +13,7 @@ public class CallMethodMutation extends MethodMutation {
     public CallMethodMutation(RandomGenerator rand, SootMethod method) throws MutationException {
         super(rand, method);
         Body body = method.getActiveBody();
-        Local local = Util.randomLocalRef(body.getLocals(), rand);
+        Local local = rand.randLocalRef(body.getLocals());
         if (local == null) {
             throw new MutationException(CallMethodMutation.class,
                     this.mutation,

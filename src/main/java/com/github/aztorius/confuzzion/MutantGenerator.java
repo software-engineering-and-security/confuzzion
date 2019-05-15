@@ -349,7 +349,7 @@ public class MutantGenerator {
                     }
                     break;
                 default: //Cast
-                    Local loc1 = Util.randomLocal(locals, rand);
+                    Local loc1 = rand.randLocal(locals);
                     if (loc1 == null) {
                         continue;
                     } else if (!(loc1.getType() instanceof RefType)) {

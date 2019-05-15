@@ -6,14 +6,17 @@ import soot.CharType;
 import soot.DoubleType;
 import soot.FloatType;
 import soot.IntType;
+import soot.Local;
 import soot.LongType;
 import soot.Modifier;
+import soot.RefType;
 import soot.Scene;
 import soot.ShortType;
 import soot.Type;
 import soot.Value;
 import soot.VoidType;
 import soot.jimple.ClassConstant;
+import soot.util.Chain;
 
 import java.lang.Math;
 import java.util.ArrayList;
@@ -243,5 +246,42 @@ public class RandomGenerator {
         }
 
         return modifiers;
+    }
+
+    /**
+     * Randomly choose a local from a Chain<Local>
+     * @param  locals chain of locals
+     * @return        reference to one Local or null
+     */
+    public Local randLocal(Chain<Local> locals) {
+        if (locals.size() <= 0) {
+            return null;
+        }
+        int choice = this.nextUint(locals.size());
+        for (Local loc : locals) {
+            if (choice <= 0) {
+                return loc;
+            }
+            choice--;
+        }
+        return null;
+    }
+
+    /**
+     * Randomly choose a local of type RefType from a Chain<Local>
+     * @param  locals chain of locals
+     * @return        reference to a Local of type RefType
+     */
+    public Local randLocalRef(Chain<Local> locals) {
+        ArrayList<Local> localRefs = new ArrayList<Local>();
+        for (Local loc : locals) {
+            if (RefType.class.isInstance(loc.getType())) {
+                localRefs.add(loc);
+            }
+        }
+        if (localRefs.size() <= 0) {
+            return null;
+        }
+        return localRefs.get(this.nextUint(localRefs.size()));
     }
 }
