@@ -15,6 +15,7 @@ public class AddMethodMutation extends ClassMutation {
     private static int MAX_PARAMETERS = 4;
 
     private SootMethod addedMethod;
+    private AddLocalMutation addedMutation;
 
     public AddMethodMutation(RandomGenerator rand, SootClass sootClass) throws MutationException {
         super(rand, sootClass);
@@ -62,7 +63,6 @@ public class AddMethodMutation extends ClassMutation {
         if (returnType == VoidType.v()) {
             body.getUnits().add(Jimple.v().newReturnVoidStmt());
         } else {
-            // TODO: add local for return stmt
             Value val = null;
             for (Local loc : body.getLocals()) {
                 if (loc.getType() == returnType) {
@@ -72,14 +72,21 @@ public class AddMethodMutation extends ClassMutation {
 
             if (val == null) {
                 val = rand.randConstant(returnType);
+                if (val == null) {
+                    // Add temporary return for BodyMutation
+                    body.getUnits().add(Jimple.v().newReturnVoidStmt());
+                    addedMutation = new AddLocalMutation(rand, addedMethod, returnType);
+                    val = addedMutation.getAddedLocal();
+                    if (val == null) {
+                        throw new MutationException(AddMethodMutation.class,
+                            "Cannot build object of type " + returnType);
+                    }
+                    // Remove temporary return
+                    body.getUnits().removeLast();
+                }
             }
 
-            if (val == null) {
-                //val = this.genObject
-                throw new MutationException(AddMethodMutation.class,
-                        "Cannot build object type " + returnType.toString());
-            }
-
+            // Add final return
             body.getUnits().add(Jimple.v().newReturnStmt(val));
         }
 
@@ -93,6 +100,8 @@ public class AddMethodMutation extends ClassMutation {
 
     @Override
     public void randomConstants() {
-        // Nothing to do
+        if (addedMutation != null) {
+            addedMutation.randomConstants();
+        }
     }
 }
