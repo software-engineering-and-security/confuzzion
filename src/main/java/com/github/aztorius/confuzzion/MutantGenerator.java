@@ -162,7 +162,6 @@ public class MutantGenerator {
         //Initialize some static fields
         for (SootField field: sClass.getFields()) {
             if (field.isStatic()) {
-                //TODO: don't call rand if not necessary
                 //TODO: call object constructors
                 Value val = rand.randConstant(field.getType());
                 if (val == null) {

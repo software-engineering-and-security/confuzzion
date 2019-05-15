@@ -8,6 +8,10 @@ import soot.Type;
 import soot.Value;
 import soot.jimple.Jimple;
 
+/**
+ * Class InitializeMutation describes an Initialization of a Local or Field
+ * It is used internally only
+ */
 public class InitializeMutation extends MethodMutation {
     public InitializeMutation(RandomGenerator rand,
                               SootMethod method,

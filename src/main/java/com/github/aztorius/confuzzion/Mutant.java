@@ -21,10 +21,18 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Class Mutant corresponds to a SootClass with some methods to build the
+ * class file
+ */
 public class Mutant {
     private String className;
     private SootClass sClass;
 
+    /**
+     * Constructor
+     * @param className ex: Test0
+     */
     public Mutant(String className) {
         this.className = className;
     }
@@ -41,6 +49,11 @@ public class Mutant {
         sClass = clazz;
     }
 
+    /**
+     * Save the SootClass as a .class file
+     * @param  folder destination folder that already exists
+     * @return        filepath
+     */
     public String toClassFile(String folder) {
         String fileName = Paths.get(folder, sClass.getShortName()).toString() + ".class";
         try {
@@ -56,6 +69,10 @@ public class Mutant {
         return fileName;
     }
 
+    /**
+     * Build the bytecode of the class in memory
+     * @return bytecode of the class as an array or byte
+     */
     public byte[] toClass() {
         String className = sClass.getShortName();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -76,6 +93,11 @@ public class Mutant {
         return classContent;
     }
 
+    /**
+     * Save class to a plaintext jimple file
+     * @param  folder destination folder
+     * @return        filepath
+     */
     public String toJimpleFile(String folder) {
         String fileName = Paths.get(folder, sClass.getShortName()).toString() + ".jimple";
         try {
@@ -90,6 +112,9 @@ public class Mutant {
         return fileName;
     }
 
+    /**
+     * Print class to FileDescriptor.out as a Jimple class
+     */
     public void toStdOut() {
         OutputStream streamOut = new FileOutputStream(FileDescriptor.out);
         PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));

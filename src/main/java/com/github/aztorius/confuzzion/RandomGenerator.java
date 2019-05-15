@@ -34,10 +34,17 @@ public class RandomGenerator {
 
     private ArrayList<String> strClasses;
 
+    /**
+     * Constructor
+     */
     public RandomGenerator() {
         this(new Random());
     }
 
+    /**
+     * Constructor with specified java.util.Random source
+     * @param rand the Random source to use
+     */
     public RandomGenerator(Random rand) {
         this.rand = rand;
         this.counter = 0;
@@ -108,6 +115,13 @@ public class RandomGenerator {
         return rand.nextLong();
     }
 
+    /**
+     * Returns a random number depending on each cumulative probability.
+     * Ex: randLimits(0.1, 0.5, 1.0) can return 0, 1 or 2 with probabilities
+     * 0.1, 0.4, 0.5
+     * @param  ...limits list of probabilities that ends with 1.0
+     * @return           random number depending on probabilities
+     */
     public int randLimits(double ...limits) {
         double rr = rand.nextDouble();
 

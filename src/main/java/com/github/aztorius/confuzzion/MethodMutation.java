@@ -19,13 +19,19 @@ import soot.util.Chain;
 import java.util.ArrayList;
 import java.util.List;
 
-/* A Method Mutation describes how a method will be changed (adding,
+/**
+ * A MethodMutation describes how a method will be changed (adding,
  * modifying, removing a local , parameter, return value or method call ...)
  */
 public abstract class MethodMutation extends Mutation {
     protected SootMethod method;
     protected BodyMutation mutation;
 
+    /**
+     * Constructor
+     * @param rand   the RandomGenerator to use
+     * @param method the method which will be mutated
+     */
     protected MethodMutation(RandomGenerator rand, SootMethod method) {
         super(rand);
         this.method = method;
@@ -36,13 +42,17 @@ public abstract class MethodMutation extends Mutation {
         return method.getActiveBody();
     }
 
-    /* Remove the mutation from method body.
+    /**
+     * Remove the mutation from method body.
      */
     @Override
     public void undo() {
         mutation.undo();
     }
 
+    /**
+     * Change all constants added by the mutation
+     */
     @Override
     public void randomConstants() {
         List<ValueBox> boxes = mutation.getUseBoxes();
@@ -75,8 +85,6 @@ public abstract class MethodMutation extends Mutation {
 
         SootClass clazz = Scene.v().getSootClass(strObj);
         if (!clazz.isPublic()) {
-            //TODO: debug: cannot built an object of this type
-            // System.out.println("DEBUG: GEN: cannot build an object of the type");
             return null;
         }
 
