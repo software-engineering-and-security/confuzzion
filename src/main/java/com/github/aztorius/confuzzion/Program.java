@@ -19,7 +19,7 @@ public class Program {
     private RandomGenerator rand;
 
     private static long MUTANTS_NUMBER_LIMIT = 10;
-    private static int TIME_LIMIT_MILISECONDS = 2000;
+    private static int TIME_LIMIT_MILISECONDS = 1000;
 
     class Launcher implements Runnable {
         private ByteClassLoader loader;
