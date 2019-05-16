@@ -43,6 +43,7 @@ public class Program {
                 //TODO: invoke methods ?: method.invoke(clazz.newInstance());
             } catch(Throwable e) {
                 this.exception = e;
+                Thread.currentThread().interrupt();
             }
         }
     }
