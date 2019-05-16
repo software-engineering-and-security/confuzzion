@@ -232,6 +232,9 @@ public class Program {
             Thread thread = new Thread(launcher);
             thread.start();
             thread.join(TIME_LIMIT_MILISECONDS);
+            if (thread.isAlive()) {
+                thread.interrupt();
+            }
             if (launcher.exception != null) {
                 throw launcher.exception;
             }
