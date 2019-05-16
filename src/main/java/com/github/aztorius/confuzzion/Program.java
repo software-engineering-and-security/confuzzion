@@ -19,6 +19,33 @@ public class Program {
     private RandomGenerator rand;
 
     private static long MUTANTS_NUMBER_LIMIT = 10;
+    private static int TIME_LIMIT_MILISECONDS = 2000;
+
+    class Launcher implements Runnable {
+        private ByteClassLoader loader;
+        private byte[] bytecode;
+        private String className;
+        public Throwable exception;
+
+        public Launcher(ByteClassLoader loader, byte[] bytecode, String className) {
+            this.loader = loader;
+            this.bytecode = bytecode;
+            this.className = className;
+            this.exception = null;
+        }
+
+        @Override
+        public void run() {
+            try {
+                Class<?> clazz = loader.load(className, bytecode);
+                clazz.newInstance();
+                //TODO: Method[] methods = clazz.getMethods();
+                //TODO: invoke methods ?: method.invoke(clazz.newInstance());
+            } catch(Throwable e) {
+                this.exception = e;
+            }
+        }
+    }
 
     /**
      * Program constructor
@@ -189,9 +216,11 @@ public class Program {
     /**
      * Generate and Instantiate all Mutants inside this program
      * @param  verbose   if true print debug info
-     * @throws Exception can throw any type of Exception from Class.newInstance()
+     * @throws Throwable can throw any type of Throwable or InterruptedException
      */
-    public void genAndLaunch(boolean verbose) throws Exception {
+    public void genAndLaunch(boolean verbose) throws Throwable {
+        ByteClassLoader loader =
+            new ByteClassLoader(Thread.currentThread().getContextClassLoader());
         for (int i = mutants.size() - 1; i >= 0; i--) {
             Mutant mut = mutants.get(i);
             if (verbose) {
@@ -199,12 +228,16 @@ public class Program {
                 mut.toStdOut();
             }
             byte[] array = mut.toClass();
-            ByteClassLoader loader = new ByteClassLoader(
-                Thread.currentThread().getContextClassLoader());
-            Class<?> clazz = loader.load(classBaseName + i, array);
-            Method[] methods = clazz.getMethods();
-            clazz.newInstance();
-            //TODO: invoke methods ?: method.invoke(clazz.newInstance());
+            Launcher launcher = new Launcher(loader, array, classBaseName + i);
+            Thread thread = new Thread(launcher);
+            thread.start();
+            thread.join(TIME_LIMIT_MILISECONDS);
+            if (launcher.exception != null) {
+                throw launcher.exception;
+            }
+            if (thread.isInterrupted()) {
+                throw new InterruptedException();
+            }
         }
     }
 
