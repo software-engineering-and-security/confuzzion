@@ -61,7 +61,6 @@ public class Status extends TimerTask {
 
     public synchronized void run() {
         System.out.print(this.toString());
-        System.out.flush();
     }
 
     @Override
