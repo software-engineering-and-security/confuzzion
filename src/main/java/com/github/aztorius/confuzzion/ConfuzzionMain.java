@@ -200,37 +200,44 @@ public class ConfuzzionMain {
                 mutationsStack.push(mutation);
                 // Update status screen
                 status.newMutation(mutation.getClass(), true, false, loop2 + 2);
-            } catch(ContractCheckException e) {
-                // Save current classes to a unique folder
-                Path folder = Paths.get(
-                    resultFolder.toString(),
-                    loop1 + "-" + loop2);
-                try {
-                    Files.createDirectories(folder);
-                } catch(IOException e2) {
+            } catch(Throwable e) {
+                if (ContractCheckException.class.isInstance(e) ||
+                    ContractCheckException.class.isInstance(e.getCause())) {
+                    if (verbose) {
+                        System.err.println("ContractCheckException raised");
+                        e.printStackTrace();
+                    }
+                    // Save current classes to a unique folder
+                    Path folder = Paths.get(
+                        resultFolder.toString(),
+                        loop1 + "-" + loop2);
+                    try {
+                        Files.createDirectories(folder);
+                    } catch(IOException e2) {
+                        e.printStackTrace();
+                        System.err.println(
+                            "Error while creating result directory." +
+                            "Check permissions and path.");
+                        System.err.println("Path: " + folder);
+                        System.err.println("Printing last program generated");
+                        System.err.println(currentProg.toString());
+                        break;
+                    }
+                    currentProg.saveToFolder(folder.toString());
+                    // Update status screen
+                    status.newMutation(mutation.getClass(), false, true, loop2 + 2);
+                } else {
+                    System.err.println("TOFIX: Unexpected exception with contract check");
                     e.printStackTrace();
-                    System.err.println(
-                        "Error while creating result directory." +
-                        "Check permissions and path.");
-                    System.err.println("Path: " + folder);
-                    System.err.println("Printing last program generated");
-                    System.err.println(currentProg.toString());
+                    // Update status screen
+                    status.newMutation(mutation.getClass(), false, false, loop2 + 2);
+                    // Exit properly
                     break;
                 }
-                currentProg.saveToFolder(folder.toString());
-                // Remove contracts checks
-                currentProg.removeContractsChecks(contractsMutations);
-                e.printStackTrace();
-                // Update status screen
-                status.newMutation(mutation.getClass(), false, true, loop2 + 2);
-            } catch(Throwable e) {
                 // Remove contracts checks
                 currentProg.removeContractsChecks(contractsMutations);
                 // Bad sample, revert mutation
                 mutation.undo();
-                e.printStackTrace();
-                // Update status screen
-                status.newMutation(mutation.getClass(), false, false, loop2 + 2);
             }
 
             if (status.isStalled()) {
