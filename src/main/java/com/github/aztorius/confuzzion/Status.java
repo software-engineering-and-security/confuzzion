@@ -13,12 +13,14 @@ public class Status extends TimerTask {
     private ArrayList<Long> contractViolations;
     private ArrayList<Class<?>> mutations;
     private boolean stalled;
+    private int mutationsStackSize;
 
     private static String template =
         "\033[H\033[2J" +
         "Confuzzion%n%n" +
         "%10d total execs | %10d total mutations%n" +
-        "%10d     execs/s | %10d     mutations/s%n%n" +
+        "%10d     execs/s | %10d     mutations/s%n" +
+        "%10d     stacked mutations%n%n" +
         "       Mutation type |    Success |      Fails | Violations |%n";
 
     public Status() {
@@ -27,6 +29,7 @@ public class Status extends TimerTask {
         failedMutations = new ArrayList<Long>();
         contractViolations = new ArrayList<Long>();
         stalled = false;
+        mutationsStackSize = 0;
     }
 
     public synchronized void newMutation(Class<?> mutation,
@@ -49,6 +52,7 @@ public class Status extends TimerTask {
             Long lSuccess = successMutations.get(index);
             lSuccess++;
             successMutations.set(index, lSuccess);
+            mutationsStackSize++;
         } else {
             Long lFailed = failedMutations.get(index);
             lFailed++;
@@ -67,6 +71,10 @@ public class Status extends TimerTask {
         return stalledValue;
     }
 
+    public synchronized void newStackSize(int size) {
+        mutationsStackSize = size;
+    }
+
     public synchronized void run() {
         System.out.print(this.toString());
     }
@@ -82,7 +90,8 @@ public class Status extends TimerTask {
             totalExecutions,
             totalMutations,
             executionsFromLastSecond,
-            mutationsFromLastSecond);
+            mutationsFromLastSecond,
+            mutationsStackSize);
         for (int i = 0; i < mutations.size(); i++) {
             str += String.format("%20s | %10d | %10d | %10d |%n",
                     mutations.get(i).getSimpleName(),

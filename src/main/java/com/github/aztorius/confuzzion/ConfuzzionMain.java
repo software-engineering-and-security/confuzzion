@@ -239,6 +239,8 @@ public class ConfuzzionMain {
                 while(toRevert-- > 0) {
                     mutationsStack.pop().undo();
                 }
+                // Refresh stack size on status screen
+                status.newStackSize(mutationsStack.size());
             }
         }
         // Stop automatic call to status.run()
