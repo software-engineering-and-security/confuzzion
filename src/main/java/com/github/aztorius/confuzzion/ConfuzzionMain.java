@@ -229,6 +229,9 @@ public class ConfuzzionMain {
                 } else {
                     System.err.println("TOFIX: Unexpected exception with contract check");
                     e.printStackTrace();
+                    if (e.getCause() != null) {
+                        e.getCause().printStackTrace();
+                    }
                     // Update status screen
                     status.newMutation(mutation.getClass(), false, false, loop2 + 2);
                     // Exit properly
@@ -240,7 +243,7 @@ public class ConfuzzionMain {
                 mutation.undo();
             }
 
-            if (status.isStalled()) {
+            if (status.isStalled() && mutationsStack.size() > 0) {
                 // Revert a random number of mutations
                 int toRevert = rand.nextUint(mutationsStack.size());
                 while(toRevert-- > 0) {
