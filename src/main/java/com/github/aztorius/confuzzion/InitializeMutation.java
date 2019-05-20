@@ -15,7 +15,7 @@ import soot.jimple.Jimple;
 public class InitializeMutation extends MethodMutation {
     public InitializeMutation(RandomGenerator rand,
                               SootMethod method,
-                              Local local) {
+                              Local local) throws MutationException {
         super(rand, method);
         Type type = local.getType();
         Value val = null;
@@ -25,6 +25,12 @@ public class InitializeMutation extends MethodMutation {
         } else {
             // Assign a constant
             val = rand.randConstant(type);
+        }
+
+        if (val == null) {
+            throw new MutationException(InitializeMutation.class,
+                    this.mutation,
+                    "Cannot generate a value for type " + type.toString());
         }
 
         mutation.addUnit(Jimple.v().newAssignStmt(local, val));
