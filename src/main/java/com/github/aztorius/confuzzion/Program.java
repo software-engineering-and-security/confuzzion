@@ -63,14 +63,14 @@ public class Program {
         MutantGenerator generator = new MutantGenerator(rand, classBaseName + "0");
         Mutant firstMutant = generator.genEmptyClass();
         this.mutants.add(firstMutant);
-        this.rand.addStrClass(firstMutant.getClassName());
+        this.rand.addStrMutant(firstMutant.getClassName());
     }
 
     public Mutant genNewClass() {
         MutantGenerator generator = new MutantGenerator(rand, classBaseName + mutants.size());
         Mutant addedMutant = generator.genEmptyClass();
         this.mutants.add(addedMutant);
-        this.rand.addStrClass(addedMutant.getClassName());
+        this.rand.addStrMutant(addedMutant.getClassName());
         return addedMutant;
     }
 

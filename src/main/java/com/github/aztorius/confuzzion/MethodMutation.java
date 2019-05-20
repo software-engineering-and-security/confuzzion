@@ -94,10 +94,11 @@ public abstract class MethodMutation extends Mutation {
             Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(),
                                             clazz.getType());
             mutation.addLocal(loc);
+            String className = method.getDeclaringClass().getName();
             // Assign local value
             mutation.addUnit(
                 Jimple.v().newAssignStmt(loc,
-                                         rand.randClass()));
+                                         rand.randClass(className)));
 
             return loc;
         }

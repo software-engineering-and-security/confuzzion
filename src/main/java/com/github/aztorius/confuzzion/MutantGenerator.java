@@ -185,10 +185,10 @@ public class MutantGenerator {
         ArrayList<Type> parameterTypes = new ArrayList<Type>();
         int numParams = rand.nextUint() % this.MAX_PARAMETERS;
         for (int i = 0; i < numParams; i++) {
-            parameterTypes.add(rand.randType(false));
+            parameterTypes.add(rand.randType(sClass.getName(), false));
         }
 
-        Type returnType = rand.randType(true);
+        Type returnType = rand.randType(sClass.getName(), true);
         int modifiers = rand.randModifiers(true);
         //TODO: random (or not) exceptions thrown ?
         ArrayList<SootClass> thrownExceptions = new ArrayList<SootClass>();

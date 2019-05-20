@@ -8,6 +8,7 @@ import soot.Value;
 import soot.VoidType;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
+import soot.jimple.NullConstant;
 
 import java.util.ArrayList;
 
@@ -25,11 +26,12 @@ public class AddMethodMutation extends ClassMutation {
         // Add random object type as parameters
         ArrayList<Type> parameterTypes = new ArrayList<Type>();
         int numParams = rand.nextUint(this.MAX_PARAMETERS);
+        String className = sootClass.getName();
         for (int i = 0; i < numParams; i++) {
-            parameterTypes.add(rand.randType(false));
+            parameterTypes.add(rand.randType(className, false));
         }
 
-        Type returnType = rand.randType(true);
+        Type returnType = rand.randType(className, true);
         int modifiers = rand.randModifiers(true);
 
         //TODO: random (or not) exceptions thrown ?
@@ -74,13 +76,17 @@ public class AddMethodMutation extends ClassMutation {
                 val = rand.randConstant(returnType);
                 if (val == null) {
                     // Add temporary return for BodyMutation
-                    body.getUnits().add(Jimple.v().newReturnVoidStmt());
+                    body.getUnits().add(Jimple.v().newReturnStmt(NullConstant.v()));
+                    // Add method to class. Necessary for AddLocalMutation
+                    sootClass.addMethod(addedMethod);
                     addedMutation = new AddLocalMutation(rand, addedMethod, returnType);
                     val = addedMutation.getAddedLocal();
                     if (val == null) {
                         throw new MutationException(AddMethodMutation.class,
                             "Cannot build object of type " + returnType);
                     }
+                    // Remove temporary method.
+                    sootClass.removeMethod(addedMethod);
                     // Remove temporary return
                     body.getUnits().removeLast();
                 }

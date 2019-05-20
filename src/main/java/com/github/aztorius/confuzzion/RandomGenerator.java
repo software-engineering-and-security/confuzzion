@@ -36,6 +36,7 @@ public class RandomGenerator {
     private double poolDouble[] = {0.0, 1.0, -1.0};
 
     private ArrayList<String> strClasses;
+    private ArrayList<String> strMutants;
 
     /**
      * Constructor
@@ -56,10 +57,15 @@ public class RandomGenerator {
         strClasses.add("java.util.concurrent.ForkJoinPool");
         strClasses.add("java.lang.invoke.MethodHandles");
         strClasses.add("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
+        strMutants = new ArrayList<String>();
     }
 
     public void addStrClass(String className) {
         strClasses.add(className);
+    }
+
+    public void addStrMutant(String className) {
+        strMutants.add(className);
     }
 
     public String getClassName() {
@@ -170,8 +176,22 @@ public class RandomGenerator {
         return val;
     }
 
-    public Value randClass() {
+    public String randClassName(String className) {
+        // Choose a class from strClasses
         String classString = strClasses.get(this.nextUint(strClasses.size()));
+        if (this.nextBoolean()) {
+            // Choose a class generated after current one
+            int index = strMutants.indexOf(className);
+            int random = this.nextUint(strMutants.size() - index);
+            if (random != 0) {
+                classString = strMutants.get(random + index);
+            } //else: skip choosing our own class
+        }
+        return classString;
+    }
+
+    public Value randClass(String className) {
+        String classString = this.randClassName(className);
         return ClassConstant.v(classString.replace(".", "/"));
     }
 
@@ -194,24 +214,30 @@ public class RandomGenerator {
         return types[this.nextUint() % types.length];
     }
 
-    public Type randRefType() {
-        String strClass = strClasses.get(this.nextUint(strClasses.size()));
+    /**
+     * Randomly choose a reference type
+     * @param  className current class name
+     * @return           random RefType
+     */
+    public Type randRefType(String className) {
+        String strClass = this.randClassName(className);
         Scene.v().loadClassAndSupport(strClass);
         return Scene.v().getRefType(strClass);
     }
 
     /**
      * Randomly choose a type between VoidType, RefType and PrimType
+     * @param  className current class name
      * @param  canBeVoid if true result may be VoidType
      * @return           random type
      */
-    public Type randType(Boolean canBeVoid) {
+    public Type randType(String className, Boolean canBeVoid) {
         if (rand.nextBoolean() && canBeVoid) {
             return VoidType.v();
         } else if (rand.nextBoolean()) {
             return this.randPrimType();
         } else {
-            return this.randRefType();
+            return this.randRefType(className);
         }
     }
 

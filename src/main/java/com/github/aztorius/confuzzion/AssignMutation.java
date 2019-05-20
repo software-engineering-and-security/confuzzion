@@ -24,7 +24,7 @@ public class AssignMutation extends MethodMutation {
         Type typeAfter = null;
         if (rand.nextBoolean()) {
             // Pick a type from RandomGenerator
-            typeAfter = rand.randRefType();
+            typeAfter = rand.randRefType(method.getDeclaringClass().getName());
         } else {
             // Pick a type from locals
             typeAfter = rand.randLocalRef(body.getLocals()).getType();
