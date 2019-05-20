@@ -137,11 +137,14 @@ public class Program {
     private MethodMutation randomMethodMutation(SootMethod method)
             throws MutationException {
         MethodMutation mutation = null;
-        switch (rand.randLimits(0.1, 1.0)) {
+        switch (rand.randLimits(0.05, 0.2, 1.0)) {
         case 0:
             mutation = new AddLocalMutation(rand, method);
             break;
         case 1:
+            mutation = new AssignMutation(rand, method);
+            break;
+        case 2:
         default:
             mutation = new CallMethodMutation(rand, method);
             break;
