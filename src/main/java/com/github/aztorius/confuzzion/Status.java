@@ -20,7 +20,7 @@ public class Status extends TimerTask {
         "Confuzzion%n%n" +
         "%10d total execs | %10d total mutations%n" +
         "%10d     execs/s | %10d     mutations/s%n" +
-        "%10d     stacked mutations%n%n" +
+        "                       | %10d    stacked muts%n%n" +
         "       Mutation type |    Success |      Fails | Violations |%n";
 
     public Status() {
