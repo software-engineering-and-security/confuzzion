@@ -235,12 +235,10 @@ public class Program {
             thread.join(TIME_LIMIT_MILISECONDS);
             if (thread.isAlive()) {
                 thread.interrupt();
+                throw new InterruptedException();
             }
             if (launcher.exception != null) {
                 throw launcher.exception;
-            }
-            if (thread.isInterrupted()) {
-                throw new InterruptedException();
             }
         }
     }
