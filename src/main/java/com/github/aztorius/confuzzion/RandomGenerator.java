@@ -68,6 +68,10 @@ public class RandomGenerator {
         strMutants.add(className);
     }
 
+    public void removeStrMutant(String className) {
+        strMutants.remove(className);
+    }
+
     public String getClassName() {
         return strClasses.get(this.nextUint(strClasses.size()));
     }

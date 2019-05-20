@@ -76,6 +76,7 @@ public class Program {
 
     public void removeClass(Mutant mutant) {
         mutants.remove(mutant);
+        rand.removeStrMutant(mutant.getClassName());
     }
 
     public ArrayList<BodyMutation> addContractsChecks(
