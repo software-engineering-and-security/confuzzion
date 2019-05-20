@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Stack;
 import java.util.Timer;
 
 public class ConfuzzionMain {
@@ -134,6 +135,8 @@ public class ConfuzzionMain {
 
         Program currentProg = new Program("Test", rand);
 
+        Stack<Mutation> mutationsStack = new Stack<Mutation>();
+
         // Refresh Status in command line each second
         Timer timer = new Timer();
         Status status = new Status();
@@ -193,6 +196,8 @@ public class ConfuzzionMain {
                 currentProg.genAndLaunch(verbose);
                 // Remove contracts checks for next turn
                 currentProg.removeContractsChecks(contractsMutations);
+                // Add mutation to the stack
+                mutationsStack.push(mutation);
                 // Update status screen
                 status.newMutation(mutation.getClass(), true, false, loop2 + 2);
             } catch(ContractCheckException e) {
@@ -226,6 +231,14 @@ public class ConfuzzionMain {
                 e.printStackTrace();
                 // Update status screen
                 status.newMutation(mutation.getClass(), false, false, loop2 + 2);
+            }
+
+            if (status.isStalled()) {
+                // Revert a random number of mutations
+                int toRevert = rand.nextUint(mutationsStack.size());
+                while(toRevert-- > 0) {
+                    mutationsStack.pop().undo();
+                }
             }
         }
         // Stop automatic call to status.run()

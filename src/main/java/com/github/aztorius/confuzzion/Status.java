@@ -12,6 +12,7 @@ public class Status extends TimerTask {
     private ArrayList<Long> failedMutations;
     private ArrayList<Long> contractViolations;
     private ArrayList<Class<?>> mutations;
+    private boolean stalled;
 
     private static String template =
         "\033[H\033[2J" +
@@ -25,6 +26,7 @@ public class Status extends TimerTask {
         successMutations = new ArrayList<Long>();
         failedMutations = new ArrayList<Long>();
         contractViolations = new ArrayList<Long>();
+        stalled = false;
     }
 
     public synchronized void newMutation(Class<?> mutation,
@@ -59,6 +61,12 @@ public class Status extends TimerTask {
         }
     }
 
+    public synchronized boolean isStalled() {
+        boolean stalledValue = stalled;
+        stalled = false;
+        return stalledValue;
+    }
+
     public synchronized void run() {
         System.out.print(this.toString());
     }
@@ -67,7 +75,9 @@ public class Status extends TimerTask {
     public String toString() {
         totalMutations += mutationsFromLastSecond;
         totalExecutions += executionsFromLastSecond;
-
+        if (mutationsFromLastSecond == 0) {
+            stalled = true;
+        }
         String str = String.format(Status.template,
             totalExecutions,
             totalMutations,
