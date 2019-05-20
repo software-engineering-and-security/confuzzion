@@ -14,11 +14,13 @@ public class AssignMutation extends MethodMutation {
 
         Body body = method.getActiveBody();
         if (body.getLocals().size() == 0) {
-            throw new MutationException(AssignMutation.class, "No local inside body.");
+            throw new MutationException(AssignMutation.class,
+                "No local inside body.");
         }
         Local localBefore = rand.randLocalRef(body.getLocals());
         if (localBefore == null) {
-            throw new MutationException(AssignMutation.class, "No reference inside body.");
+            throw new MutationException(AssignMutation.class,
+                "No reference inside body.");
         }
         Type typeBefore = localBefore.getType();
         Type typeAfter = null;
