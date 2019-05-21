@@ -93,12 +93,9 @@ public class ConfuzzionMain {
     }
 
     private static String parseOption(String[] args, String option) {
-        for (int i = 1; i < args.length; i++) {
+        for (int i = 1; i < args.length - 1; i++) {
             if (args[i].equals(option)) {
                 i++;
-                if (i >= args.length) {
-                    break;
-                }
                 return args[i];
             }
         }
