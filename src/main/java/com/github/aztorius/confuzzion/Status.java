@@ -14,10 +14,12 @@ public class Status extends TimerTask {
     private ArrayList<Class<?>> mutations;
     private boolean stalled;
     private int mutationsStackSize;
+    private long time;
 
     private static String template =
         "\033[H\033[2J" +
         "Confuzzion%n%n" +
+        "            %4d:%02d:%02d |%n" +
         "%10d total execs | %10d total mutations%n" +
         "%10d     execs/s | %10d     mutations/s%n" +
         "               %7s | %10d    stacked muts%n%n" +
@@ -30,6 +32,7 @@ public class Status extends TimerTask {
         contractViolations = new ArrayList<Long>();
         stalled = false;
         mutationsStackSize = 0;
+        time = 0;
     }
 
     public synchronized void newMutation(Class<?> mutation,
@@ -86,7 +89,11 @@ public class Status extends TimerTask {
         if (mutationsFromLastSecond == 0) {
             stalled = true;
         }
+        time++;
         String str = String.format(Status.template,
+            time / 3600,
+            (time % 3600) / 60,
+            time % 60,
             totalExecutions,
             totalMutations,
             executionsFromLastSecond,
