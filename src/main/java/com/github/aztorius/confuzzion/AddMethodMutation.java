@@ -34,13 +34,10 @@ public class AddMethodMutation extends ClassMutation {
         Type returnType = rand.randType(className, true);
         int modifiers = rand.randModifiers(true);
 
-        //TODO: random (or not) exceptions thrown ?
-        ArrayList<SootClass> thrownExceptions = new ArrayList<SootClass>();
         addedMethod = new SootMethod(name,
                                      parameterTypes,
                                      returnType,
-                                     modifiers,
-                                     thrownExceptions);
+                                     modifiers);
         JimpleBody body = Jimple.v().newBody(addedMethod);
         addedMethod.setActiveBody(body);
 
