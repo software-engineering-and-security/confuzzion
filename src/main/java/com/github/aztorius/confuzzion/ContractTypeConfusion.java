@@ -18,7 +18,7 @@ import soot.util.Chain;
 
 import java.util.ArrayList;
 
-public class ContractTypeConfusion extends Contract {
+public class ContractTypeConfusion implements Contract {
     public ContractTypeConfusion() {
 
     }
