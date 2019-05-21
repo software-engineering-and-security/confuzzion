@@ -201,7 +201,6 @@ public abstract class MethodMutation extends Mutation {
             Value loc = this.genObject(body, param.toString());
             if (loc == null) {
                 // If a parameter cannot be built use a null value.
-                // TODO: catch IllegalArgumentException
                 loc = soot.jimple.NullConstant.v();
             }
             parameters.add(loc);
@@ -283,7 +282,6 @@ public abstract class MethodMutation extends Mutation {
                 if (locParam == null) {
                     // May happen if building the object is
                     // too difficult. Use null.
-                    //TODO: catch IllegalArgumentException
                     locParam = soot.jimple.NullConstant.v();
                 }
             }
