@@ -15,6 +15,9 @@ import java.util.Timer;
 public class ConfuzzionMain {
     private Path resultFolder;
 
+    private static long CONST_LOOP_ITERATIONS = 10;
+    private static long MAIN_LOOP_ITERATIONS = 1000;
+
     public ConfuzzionMain(Path resultFolder) {
         this.resultFolder = resultFolder;
     }
@@ -24,8 +27,8 @@ public class ConfuzzionMain {
             ConfuzzionMain.printHelp();
         } else if (args[0].equals("mut")) {
             int iterArgs = 1;
-            long const_loop_iterations = 10;
-            long main_loop_iterations = 1000;
+            long const_loop_iterations = ConfuzzionMain.CONST_LOOP_ITERATIONS;
+            long main_loop_iterations = ConfuzzionMain.MAIN_LOOP_ITERATIONS;
 
             String main_loop_iterations_str =
                 ConfuzzionMain.parseOption(args, "-m");
