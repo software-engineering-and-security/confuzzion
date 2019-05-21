@@ -1,10 +1,6 @@
 package com.github.aztorius.confuzzion;
 
 import java.io.IOException;
-import java.lang.IllegalAccessException;
-import java.lang.InstantiationException;
-import java.lang.NoSuchMethodException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
