@@ -24,8 +24,8 @@ public class AddMethodMutation extends ClassMutation {
         String name = "method" + rand.nextIncrement();
 
         // Add random object type as parameters
-        ArrayList<Type> parameterTypes = new ArrayList<Type>();
         int numParams = rand.nextUint(this.MAX_PARAMETERS);
+        ArrayList<Type> parameterTypes = new ArrayList<Type>(numParams);
         String className = sootClass.getName();
         for (int i = 0; i < numParams; i++) {
             parameterTypes.add(rand.randType(className, false));

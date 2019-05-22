@@ -83,7 +83,8 @@ public class Program {
             ArrayList<Contract> contracts,
             Mutation mutation) {
         Body body = null;
-        ArrayList<BodyMutation> mutations = new ArrayList<BodyMutation>();
+        ArrayList<BodyMutation> mutations =
+            new ArrayList<BodyMutation>(contracts.size());
 
         if (mutation instanceof MethodMutation) {
             // Get the body and put checks at the end

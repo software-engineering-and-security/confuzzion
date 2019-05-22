@@ -167,7 +167,7 @@ public abstract class MethodMutation extends Mutation {
         SootMethod constructor =
             constructors.get(rand.nextUint(constructors.size()));
         List<Type> parameterTypes = constructor.getParameterTypes();
-        ArrayList<Value> parameters = new ArrayList<Value>();
+        ArrayList<Value> parameters = new ArrayList<Value>(parameterTypes.size());
         Boolean found = false;
 
         // Find or generate parameters
