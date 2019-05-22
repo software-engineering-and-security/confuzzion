@@ -104,16 +104,18 @@ public abstract class MethodMutation extends Mutation {
         }
 
         if (clazz.isEnum()) {
-            int choice = rand.nextUint() % clazz.getFields().size();
-            int i = 0;
-            SootField selectedField = null;
+            ArrayList<SootField> staticFields = new ArrayList<SootField>();
             for (SootField field : clazz.getFields()) {
-                selectedField = field;
-                if (i == choice) {
-                    break;
+                if (field.isStatic()) {
+                    staticFields.add(field);
                 }
-                i++;
             }
+            if (staticFields.size() == 0) {
+                return null;
+            }
+            int choice = rand.nextUint(staticFields.size());
+            SootField selectedField = staticFields.get(choice);
+
             Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(),
                 selectedField.getType());
             mutation.addLocal(loc);
