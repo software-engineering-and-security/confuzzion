@@ -53,8 +53,6 @@ public class RandomGenerator {
         this.rand = rand;
         this.counter = 0;
         strClasses = new ArrayList<String>();
-        strClasses.add("java.io.ByteArrayOutputStream");
-        strClasses.add("java.util.concurrent.ForkJoinPool");
         strClasses.add("java.lang.invoke.MethodHandles");
         strClasses.add("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
         strMutants = new ArrayList<String>();
