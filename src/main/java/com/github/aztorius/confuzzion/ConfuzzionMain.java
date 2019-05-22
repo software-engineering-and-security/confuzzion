@@ -79,13 +79,15 @@ public class ConfuzzionMain {
             resultFolder = Paths.get(folderOption);
         }
 
-        try {
-            Files.createDirectories(resultFolder);
-        } catch(IOException e) {
-            System.err.println(
-                "Error while creating result directory." +
+        if (!Files.exists(resultFolder)) {
+            try {
+                Files.createDirectories(resultFolder);
+            } catch(IOException e) {
+                System.err.println(
+                "Error while creating result directory. " +
                 "Check permissions and path.");
-            System.err.println("Path: " + resultFolder);
+                System.err.println("Path: " + resultFolder);
+            }
         }
 
         return resultFolder;
