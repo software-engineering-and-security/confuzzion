@@ -57,7 +57,7 @@ public class Mutant {
         try {
             OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
-            JasminClass jasminClass = new soot.jimple.JasminClass(sClass);
+            JasminClass jasminClass = new JasminClass(sClass);
             jasminClass.print(writerOut);
             writerOut.flush();
             streamOut.close();
@@ -77,7 +77,7 @@ public class Mutant {
         OutputStream streamOut = new JasminOutputStream(stream);
         PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
         {
-            JasminClass jasminClass = new soot.jimple.JasminClass(sClass);
+            JasminClass jasminClass = new JasminClass(sClass);
             jasminClass.print(writerOut);
         }
         writerOut.flush();
