@@ -199,12 +199,11 @@ public class ConfuzzionMain {
                 // Update status screen
                 status.newMutation(mutation.getClass(), true, false, loop2 + 2);
             } catch(Throwable e) {
+                if (verbose) {
+                    e.printStackTrace();
+                }
                 if (ContractCheckException.class.isInstance(e) ||
                     ContractCheckException.class.isInstance(e.getCause())) {
-                    if (verbose) {
-                        System.err.println("ContractCheckException raised");
-                        e.printStackTrace();
-                    }
                     // Save current classes to a unique folder
                     Path folder = Paths.get(
                         resultFolder.toString(),
@@ -224,9 +223,11 @@ public class ConfuzzionMain {
                     currentProg.saveToFolder(folder.toString());
                     // Update status screen
                     status.newMutation(mutation.getClass(), false, true, loop2 + 2);
+                } else if (InterruptedException.class.isInstance(e)) {
+                    // Update status screen
+                    status.newMutation(mutation.getClass(), false, false, loop2 + 2);
                 } else {
                     System.err.println("TOFIX: Unexpected exception with contract check");
-                    e.printStackTrace();
                     if (e.getCause() != null) {
                         e.getCause().printStackTrace();
                     }
