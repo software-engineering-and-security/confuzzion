@@ -158,8 +158,6 @@ public class ConfuzzionMain {
             boolean loop2NoException = true;
             long loop2 = 0;
             for (loop2 = 0; loop2 < constants_retry || constants_retry < 0; loop2++) {
-                // Change constants in mutation units taken from a pool
-                mutation.randomConstants();
                 try {
                     if (verbose) {
                         System.err.println(
@@ -176,13 +174,15 @@ public class ConfuzzionMain {
                     if (verbose) {
                         e.printStackTrace();
                     }
+                    // Change constants in mutation units taken from a pool
+                    mutation.randomConstants();
                 }
             }
 
             if (!loop2NoException) {
                 // Try another mutation
                 mutation.undo();
-                status.newMutation(mutation.getClass(), false, false, loop2 + 1);
+                status.newMutation(mutation.getClass(), false, false, loop2);
                 continue;
             }
 
@@ -197,7 +197,7 @@ public class ConfuzzionMain {
                 // Add mutation to the stack
                 mutationsStack.push(mutation);
                 // Update status screen
-                status.newMutation(mutation.getClass(), true, false, loop2 + 2);
+                status.newMutation(mutation.getClass(), true, false, loop2 + 1);
             } catch(Throwable e) {
                 if (verbose) {
                     e.printStackTrace();
@@ -222,17 +222,18 @@ public class ConfuzzionMain {
                     }
                     currentProg.saveToFolder(folder.toString());
                     // Update status screen
-                    status.newMutation(mutation.getClass(), false, true, loop2 + 2);
+                    status.newMutation(mutation.getClass(), false, true, loop2 + 1);
                 } else if (InterruptedException.class.isInstance(e)) {
                     // Update status screen
-                    status.newMutation(mutation.getClass(), false, false, loop2 + 2);
+                    status.newMutation(mutation.getClass(), false, false, loop2 + 1);
                 } else {
                     System.err.println("TOFIX: Unexpected exception with contract check");
+                    e.printStackTrace();
                     if (e.getCause() != null) {
                         e.getCause().printStackTrace();
                     }
                     // Update status screen
-                    status.newMutation(mutation.getClass(), false, false, loop2 + 2);
+                    status.newMutation(mutation.getClass(), false, false, loop2 + 1);
                     // Exit properly
                     break;
                 }
