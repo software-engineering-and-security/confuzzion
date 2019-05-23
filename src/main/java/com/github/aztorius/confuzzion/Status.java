@@ -56,15 +56,14 @@ public class Status extends TimerTask {
             lSuccess++;
             successMutations.set(index, lSuccess);
             mutationsStackSize++;
+        } else if (violates) {
+            Long lViolations = contractViolations.get(index);
+            lViolations++;
+            contractViolations.set(index, lViolations);
         } else {
             Long lFailed = failedMutations.get(index);
             lFailed++;
             failedMutations.set(index, lFailed);
-        }
-        if (violates) {
-            Long lViolations = contractViolations.get(index);
-            lViolations++;
-            contractViolations.set(index, lViolations);
         }
     }
 
