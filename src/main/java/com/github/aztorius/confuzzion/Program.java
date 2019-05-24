@@ -119,6 +119,34 @@ public class Program {
         }
     }
 
+    public BodyMutation addContractCheck(Contract contract, Mutation mutation) {
+        Body body = null;
+        BodyMutation bodyMutation = null;
+
+        if (mutation instanceof MethodMutation) {
+            // Get the body and put checks at the end
+            MethodMutation mMutation = (MethodMutation)mutation;
+            body = mMutation.getBody();
+        } else if (mutation instanceof ClassMutation) {
+            // TODO: put checks inside constructors
+            return bodyMutation; //TODO: remove
+        } else if (mutation instanceof ProgramMutation) {
+            // TODO: if ProgramMutation, put checks somewhere ?
+            return bodyMutation; //TODO: remove
+        } else {
+            throw new IllegalArgumentException("mutation is unknown");
+        }
+
+        // Apply contract check on the body
+        bodyMutation = contract.applyCheck(body);
+
+        return bodyMutation;
+    }
+
+    public void removeContractCheck(BodyMutation mutation) {
+        mutation.undo();
+    }
+
     private SootMethod randomSootMethod() {
         SootClass sClass = this.randomSootClass();
         int idMethod = rand.nextUint(sClass.getMethods().size());

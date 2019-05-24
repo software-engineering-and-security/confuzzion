@@ -155,6 +155,28 @@ public class ConfuzzionMain {
                 continue;
             }
 
+            BodyMutation executedMutation =
+                currentProg.addContractCheck(new ExecutedContract(), mutation);
+            // If a BodyMutation has been created, then check if the code
+            // is indeed executed (throws and Exception) before checking if
+            // it violates contracts
+            if (executedMutation != null) {
+                try {
+                    currentProg.genAndLaunch(verbose);
+                    currentProg.removeContractCheck(executedMutation);
+                    mutation.undo();
+                    status.newMutation(mutation.getClass(), false, false, 1);
+                    continue;
+                } catch(Throwable e) {
+                    currentProg.removeContractCheck(executedMutation);
+                    if (!ContractCheckException.class.isInstance(e)) {
+                        mutation.undo();
+                        status.newMutation(mutation.getClass(), false, false, 1);
+                        continue;
+                    }
+                }
+            }
+
             boolean loop2NoException = true;
             long loop2 = 0;
             for (loop2 = 0; loop2 < constants_retry || constants_retry < 0; loop2++) {
@@ -182,7 +204,7 @@ public class ConfuzzionMain {
             if (!loop2NoException) {
                 // Try another mutation
                 mutation.undo();
-                status.newMutation(mutation.getClass(), false, false, loop2);
+                status.newMutation(mutation.getClass(), false, false, loop2 + 1);
                 continue;
             }
 
@@ -197,7 +219,7 @@ public class ConfuzzionMain {
                 // Add mutation to the stack
                 mutationsStack.push(mutation);
                 // Update status screen
-                status.newMutation(mutation.getClass(), true, false, loop2 + 1);
+                status.newMutation(mutation.getClass(), true, false, loop2 + 2);
             } catch(Throwable e) {
                 if (verbose) {
                     e.printStackTrace();
@@ -222,10 +244,10 @@ public class ConfuzzionMain {
                     }
                     currentProg.saveToFolder(folder.toString());
                     // Update status screen
-                    status.newMutation(mutation.getClass(), false, true, loop2 + 1);
+                    status.newMutation(mutation.getClass(), false, true, loop2 + 2);
                 } else if (InterruptedException.class.isInstance(e)) {
                     // Update status screen
-                    status.newMutation(mutation.getClass(), false, false, loop2 + 1);
+                    status.newMutation(mutation.getClass(), false, false, loop2 + 2);
                 } else {
                     System.err.println("TOFIX: Unexpected exception with contract check");
                     e.printStackTrace();
@@ -233,7 +255,7 @@ public class ConfuzzionMain {
                         e.getCause().printStackTrace();
                     }
                     // Update status screen
-                    status.newMutation(mutation.getClass(), false, false, loop2 + 1);
+                    status.newMutation(mutation.getClass(), false, false, loop2 + 2);
                     // Exit properly
                     break;
                 }
