@@ -11,7 +11,6 @@ import java.util.Timer;
 public class ConfuzzionMain {
     private Path resultFolder;
 
-    private static long CONST_LOOP_ITERATIONS = 10;
     private static long MAIN_LOOP_ITERATIONS = 1000;
 
     public ConfuzzionMain(Path resultFolder) {
@@ -23,7 +22,6 @@ public class ConfuzzionMain {
             ConfuzzionMain.printHelp();
         } else if (args[0].equals("mut")) {
             int iterArgs = 1;
-            long const_loop_iterations = ConfuzzionMain.CONST_LOOP_ITERATIONS;
             long main_loop_iterations = ConfuzzionMain.MAIN_LOOP_ITERATIONS;
 
             String main_loop_iterations_str =
@@ -32,18 +30,10 @@ public class ConfuzzionMain {
                 main_loop_iterations = Long.parseLong(main_loop_iterations_str);
             }
 
-            String const_loop_iterations_str =
-                ConfuzzionMain.parseOption(args, "-c");
-            if (const_loop_iterations_str != null) {
-                const_loop_iterations = Long.parseLong(const_loop_iterations_str);
-            }
-
             boolean verbose = ConfuzzionMain.parseVerbose(args);
             Path resultFolder = ConfuzzionMain.parseDirectory(args);
             ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
-            conf.startMutation(const_loop_iterations,
-                main_loop_iterations,
-                verbose);
+            conf.startMutation(main_loop_iterations, verbose);
         } else if (args[0].equals("gen")) {
             long main_loop_iterations = 10;
             String main_loop_iterations_str =
@@ -126,7 +116,7 @@ public class ConfuzzionMain {
         }
     }
 
-    public void startMutation(long constants_retry, long mainloop_turn, boolean verbose) {
+    public void startMutation(long mainloop_turn, boolean verbose) {
         RandomGenerator rand = new RandomGenerator();
         ArrayList<Contract> contracts = new ArrayList<Contract>();
         contracts.add(new ContractTypeConfusion());
@@ -137,8 +127,8 @@ public class ConfuzzionMain {
 
         // Refresh Status in command line each second
         Timer timer = new Timer();
-        Status status = new Status();
-        timer.schedule(status, 0, 1000);
+        StatusScreen statusScreen = new StatusScreen();
+        timer.schedule(statusScreen, 0, 1000);
 
         for (long loop1 = 0; loop1 < mainloop_turn || mainloop_turn < 0; loop1++) {
             Mutation mutation = null;
@@ -151,61 +141,42 @@ public class ConfuzzionMain {
                     e.printStackTrace();
                 }
                 e.undoMutation();
-                status.newMutation(e.getMutationClass(), false, false, 0);
+                statusScreen.newMutation(e.getMutationClass(), Status.FAILED, 0);
                 continue;
             }
 
             BodyMutation executedMutation =
                 currentProg.addContractCheck(new ExecutedContract(), mutation);
-            // If a BodyMutation has been created, then check if the code
-            // is indeed executed (throws and Exception) before checking if
-            // it violates contracts
             if (executedMutation != null) {
+                // Check if the code is executed and without exception
                 try {
                     currentProg.genAndLaunch(verbose);
                     currentProg.removeContractCheck(executedMutation);
                     mutation.undo();
-                    status.newMutation(mutation.getClass(), false, false, 1);
+                    statusScreen.newMutation(mutation.getClass(),
+                        Status.NOTEXECUTED, 1);
                     continue;
                 } catch(Throwable e) {
                     currentProg.removeContractCheck(executedMutation);
                     if (!ContractCheckException.class.isInstance(e)) {
                         mutation.undo();
-                        status.newMutation(mutation.getClass(), false, false, 1);
+                        statusScreen.newMutation(mutation.getClass(),
+                            Status.CRASHED, 1);
                         continue;
                     }
                 }
-            }
-
-            boolean loop2NoException = true;
-            long loop2 = 0;
-            for (loop2 = 0; loop2 < constants_retry || constants_retry < 0; loop2++) {
+            } else {
+                // Check if the code does not throw exception
                 try {
-                    if (verbose) {
-                        System.err.println(
-                            "===Program Test: iter1 " + loop1 +
-                            " iter2 " + loop2 + "===");
-                    }
-                    // Instantiation and launch
                     currentProg.genAndLaunch(verbose);
-                    loop2NoException = true;
-                    // Continue if no exception else try other constants
-                    break;
                 } catch(Throwable e) {
-                    loop2NoException = false;
                     if (verbose) {
                         e.printStackTrace();
                     }
-                    // Change constants in mutation units taken from a pool
-                    mutation.randomConstants();
+                    mutation.undo();
+                    statusScreen.newMutation(mutation.getClass(),
+                        Status.CRASHED, 1);
                 }
-            }
-
-            if (!loop2NoException) {
-                // Try another mutation
-                mutation.undo();
-                status.newMutation(mutation.getClass(), false, false, loop2 + 1);
-                continue;
             }
 
             // Add contracts checks
@@ -219,7 +190,7 @@ public class ConfuzzionMain {
                 // Add mutation to the stack
                 mutationsStack.push(mutation);
                 // Update status screen
-                status.newMutation(mutation.getClass(), true, false, loop2 + 2);
+                statusScreen.newMutation(mutation.getClass(), Status.SUCCESS, 2);
             } catch(Throwable e) {
                 if (verbose) {
                     e.printStackTrace();
@@ -229,7 +200,7 @@ public class ConfuzzionMain {
                     // Save current classes to a unique folder
                     Path folder = Paths.get(
                         resultFolder.toString(),
-                        loop1 + "-" + loop2);
+                        mutation.getClass().getSimpleName() + "-" + loop1);
                     try {
                         Files.createDirectories(folder);
                     } catch(IOException e2) {
@@ -244,10 +215,12 @@ public class ConfuzzionMain {
                     }
                     currentProg.saveToFolder(folder.toString());
                     // Update status screen
-                    status.newMutation(mutation.getClass(), false, true, loop2 + 2);
+                    statusScreen.newMutation(mutation.getClass(),
+                        Status.VIOLATES, 2);
                 } else if (InterruptedException.class.isInstance(e)) {
                     // Update status screen
-                    status.newMutation(mutation.getClass(), false, false, loop2 + 2);
+                    statusScreen.newMutation(mutation.getClass(),
+                        Status.INTERRUPTED, 2);
                 } else {
                     System.err.println("TOFIX: Unexpected exception with contract check");
                     e.printStackTrace();
@@ -255,7 +228,8 @@ public class ConfuzzionMain {
                         e.getCause().printStackTrace();
                     }
                     // Update status screen
-                    status.newMutation(mutation.getClass(), false, false, loop2 + 2);
+                    statusScreen.newMutation(mutation.getClass(),
+                        Status.CRASHED, 2);
                     // Exit properly
                     break;
                 }
@@ -265,19 +239,19 @@ public class ConfuzzionMain {
                 mutation.undo();
             }
 
-            if (status.isStalled() && mutationsStack.size() > 0) {
+            if (statusScreen.isStalled() && mutationsStack.size() > 0) {
                 // Revert a random number of mutations
                 int toRevert = rand.nextUint(mutationsStack.size());
                 while(toRevert-- > 0) {
                     mutationsStack.pop().undo();
                 }
                 // Refresh stack size on status screen
-                status.newStackSize(mutationsStack.size());
+                statusScreen.newStackSize(mutationsStack.size());
             }
         }
         // Stop automatic call to status.run()
         timer.cancel();
         // Print a last time the status screen
-        status.run();
+        statusScreen.run();
     }
 }
