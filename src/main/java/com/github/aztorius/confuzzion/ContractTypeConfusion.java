@@ -9,12 +9,10 @@ import soot.SootField;
 import soot.SootMethod;
 import soot.Type;
 import soot.Unit;
-import soot.UnitPatchingChain;
 import soot.Value;
 import soot.jimple.ClassConstant;
 import soot.jimple.Jimple;
 import soot.jimple.NullConstant;
-import soot.util.Chain;
 
 import java.util.ArrayList;
 
@@ -26,15 +24,15 @@ public class ContractTypeConfusion implements Contract {
     @Override
     public BodyMutation applyCheck(Body body) {
         BodyMutation mutation = new BodyMutation(body);
-        Chain<Local> locals = body.getLocals();
         SootClass exception = Scene.v().getSootClass(
             "com.github.aztorius.confuzzion.ContractCheckException");
         SootMethod mExceptionInit = exception.getMethodByName("<init>");
         SootClass clazz = Scene.v().getSootClass("java.lang.Class");
+        SootMethod isInstance = clazz.getMethodByName("isInstance");
         int a = 0;
         ArrayList<Local> newLocals = new ArrayList<Local>();
 
-        for (Local local : locals) {
+        for (Local local : body.getLocals()) {
             Type type = local.getType();
             if (!RefType.class.isInstance(type)) {
                 continue;
@@ -58,7 +56,6 @@ public class ContractTypeConfusion implements Contract {
                 Jimple.v().newAssignStmt(locClass,
                                          ClassConstant.v(
                                              refType.getClassName().replace(".", "/"))));
-            SootMethod isInstance = clazz.getMethodByName("isInstance");
 
             // Call isInstance on the class to check
             Value vIsInstance =
@@ -71,7 +68,7 @@ public class ContractTypeConfusion implements Contract {
             mutation.addUnit(
                 Jimple.v().newAssignStmt(locBoolResult, vIsInstance));
 
-            // if isInstance return 0 then jump at the end
+            // if isInstance return 1 then jump at the end
             // else throw Exception
             mutation.addUnit(
                 Jimple.v().newIfStmt(
