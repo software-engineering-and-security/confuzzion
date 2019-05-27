@@ -176,6 +176,7 @@ public class ConfuzzionMain {
                     mutation.undo();
                     statusScreen.newMutation(mutation.getClass(),
                         Status.CRASHED, 1);
+                    continue;
                 }
             }
 
