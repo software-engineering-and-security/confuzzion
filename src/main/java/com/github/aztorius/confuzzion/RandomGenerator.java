@@ -213,7 +213,7 @@ public class RandomGenerator {
             ShortType.v()
         };
 
-        return types[this.nextUint() % types.length];
+        return types[this.nextUint(types.length)];
     }
 
     /**
@@ -259,7 +259,7 @@ public class RandomGenerator {
             modifiers |= Modifier.FINAL;
         }
 
-        switch (this.nextUint() % 4) {
+        switch (this.nextUint(4)) {
         case 0:
             /* no modifier : java default */
             break;
