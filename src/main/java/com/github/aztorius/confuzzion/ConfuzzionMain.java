@@ -158,7 +158,7 @@ public class ConfuzzionMain {
                     continue;
                 } catch(Throwable e) {
                     currentProg.removeContractCheck(executedMutation);
-                    if (!ContractCheckException.class.isInstance(e)) {
+                    if (!ContractCheckException.class.isInstance(Util.getCause(e))) {
                         mutation.undo();
                         statusScreen.newMutation(mutation.getClass(),
                             Status.CRASHED, 1);
@@ -196,8 +196,8 @@ public class ConfuzzionMain {
                 if (verbose) {
                     e.printStackTrace();
                 }
-                if (ContractCheckException.class.isInstance(e) ||
-                    ContractCheckException.class.isInstance(e.getCause())) {
+                Throwable cause = Util.getCause(e);
+                if (ContractCheckException.class.isInstance(cause)) {
                     // Save current classes to a unique folder
                     Path folder = Paths.get(
                         resultFolder.toString(),
@@ -218,16 +218,13 @@ public class ConfuzzionMain {
                     // Update status screen
                     statusScreen.newMutation(mutation.getClass(),
                         Status.VIOLATES, 2);
-                } else if (InterruptedException.class.isInstance(e)) {
+                } else if (InterruptedException.class.isInstance(cause)) {
                     // Update status screen
                     statusScreen.newMutation(mutation.getClass(),
                         Status.INTERRUPTED, 2);
                 } else {
                     System.err.println("TOFIX: Unexpected exception with contract check");
-                    e.printStackTrace();
-                    if (e.getCause() != null) {
-                        e.getCause().printStackTrace();
-                    }
+                    cause.printStackTrace();
                     // Update status screen
                     statusScreen.newMutation(mutation.getClass(),
                         Status.CRASHED, 2);

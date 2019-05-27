@@ -19,4 +19,14 @@ public class Util {
     public static String abstractToConcrete(String className) {
         return childMap.get(className);
     }
+
+    public static Throwable getCause(Throwable e) {
+        Throwable cause = null;
+        Throwable result = e;
+
+        while((cause = result.getCause()) != null && (result != cause)) {
+            result = cause;
+        }
+        return result;
+    }
 }
