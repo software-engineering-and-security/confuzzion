@@ -5,4 +5,9 @@ package com.github.aztorius.confuzzion;
  */
 public class ContractCheckException extends Exception {
 
+	/**
+	 * Generated serialVersionUID
+	 */
+	private static final long serialVersionUID = -8736479620640498951L;
+
 }
