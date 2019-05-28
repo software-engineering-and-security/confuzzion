@@ -21,7 +21,6 @@ public class ConfuzzionMain {
         if (args.length < 1) {
             ConfuzzionMain.printHelp();
         } else if (args[0].equals("mut")) {
-            int iterArgs = 1;
             long main_loop_iterations = ConfuzzionMain.MAIN_LOOP_ITERATIONS;
 
             String main_loop_iterations_str =
