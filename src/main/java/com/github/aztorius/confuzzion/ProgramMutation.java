@@ -1,7 +1,5 @@
 package com.github.aztorius.confuzzion;
 
-import java.util.List;
-
 /**
  * Class ProgramMutation describes a mutation on a Program
  */

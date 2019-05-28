@@ -1,7 +1,5 @@
 package com.github.aztorius.confuzzion;
 
-import soot.SootClass;
-
 public class AddClassMutation extends ProgramMutation {
     private Mutant addedClass;
 

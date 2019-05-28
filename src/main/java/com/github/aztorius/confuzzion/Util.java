@@ -1,10 +1,5 @@
 package com.github.aztorius.confuzzion;
 
-import soot.Local;
-import soot.RefType;
-import soot.util.Chain;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Util {

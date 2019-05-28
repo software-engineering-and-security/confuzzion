@@ -35,9 +35,6 @@ public class EqualsContract implements Contract {
             if (!RefType.class.isInstance(type)) {
                 continue;
             }
-            // If type is a reference to an object, then check the reference
-            RefType refType = (RefType)type;
-            SootClass sClass = refType.getSootClass();
 
             Unit uNop = Jimple.v().newNopStmt();
             // Check that local is not null, else abort contract checking

@@ -5,7 +5,6 @@ import soot.Local;
 import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
-import soot.SootField;
 import soot.SootMethod;
 import soot.Type;
 import soot.Unit;
@@ -39,7 +38,6 @@ public class ContractTypeConfusion implements Contract {
             }
             // If type is a reference to an object, then check the reference
             RefType refType = (RefType)type;
-            SootClass sClass = refType.getSootClass();
 
             Unit uNop = Jimple.v().newNopStmt();
             // Check that local is not null, else abort contract checking

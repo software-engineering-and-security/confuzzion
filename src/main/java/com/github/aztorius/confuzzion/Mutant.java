@@ -2,15 +2,10 @@ package com.github.aztorius.confuzzion;
 
 import soot.Printer;
 import soot.SootClass;
-import soot.SourceLocator;
-import soot.Type;
 import soot.jimple.JasminClass;
-import soot.jimple.Jimple;
-import soot.options.Options;
 import soot.util.JasminOutputStream;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -72,7 +67,6 @@ public class Mutant {
      * @return bytecode of the class as an array or byte
      */
     public byte[] toClass() {
-        String className = sClass.getShortName();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         OutputStream streamOut = new JasminOutputStream(stream);
         PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));

@@ -9,7 +9,6 @@ import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
 import soot.Type;
-import soot.UnitPatchingChain;
 import soot.Value;
 import soot.ValueBox;
 import soot.jimple.Constant;
