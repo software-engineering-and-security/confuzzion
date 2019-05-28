@@ -222,13 +222,9 @@ public class ConfuzzionMain {
                     statusScreen.newMutation(mutation.getClass(),
                         Status.INTERRUPTED, 2);
                 } else {
-                    System.err.println("TOFIX: Unexpected exception with contract check");
-                    cause.printStackTrace();
                     // Update status screen
                     statusScreen.newMutation(mutation.getClass(),
                         Status.CRASHED, 2);
-                    // Exit properly
-                    break;
                 }
                 // Remove contracts checks
                 currentProg.removeContractsChecks(contractsMutations);
