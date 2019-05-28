@@ -87,17 +87,21 @@ public abstract class MethodMutation extends Mutation {
             return null;
         }
 
-        // In case its a spcial Class object
-        if (clazz.getName().equals("java.lang.Class")) {
+        // In case its a special Class object or String object
+        if (clazz.getName().equals("java.lang.Class") || clazz.getName().equals("java.lang.String")) {
             // Create local
             Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(),
                                             clazz.getType());
             mutation.addLocal(loc);
             String className = method.getDeclaringClass().getName();
+            Value value = null;
+            if (clazz.getName().equals("java.lang.Class")) {
+                value = rand.randClass(className);
+            } else {
+                value = rand.randString(className);
+            }
             // Assign local value
-            mutation.addUnit(
-                Jimple.v().newAssignStmt(loc,
-                                         rand.randClass(className)));
+            mutation.addUnit(Jimple.v().newAssignStmt(loc, value));
 
             return loc;
         }

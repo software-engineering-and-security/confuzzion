@@ -12,14 +12,19 @@ import soot.Modifier;
 import soot.RefType;
 import soot.Scene;
 import soot.ShortType;
+import soot.SootClass;
+import soot.SootField;
+import soot.SootMethod;
 import soot.Type;
 import soot.Value;
 import soot.VoidType;
 import soot.jimple.ClassConstant;
+import soot.jimple.StringConstant;
 import soot.util.Chain;
 
 import java.lang.Math;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -195,6 +200,61 @@ public class RandomGenerator {
     public Value randClass(String className) {
         String classString = this.randClassName(className);
         return ClassConstant.v(classString.replace(".", "/"));
+    }
+
+    /**
+     * Randomly generate a StringConstant from field/methods/classes names
+     * @param className
+     * @return
+     */
+    public Value randString(String className) {
+        // Choose a random class
+        String classString = this.randClassName(className);
+        SootClass sootClass = Scene.v().loadClassAndSupport(classString);
+        String value = null;
+        switch(this.nextUint(3)) {
+        case 0:
+            // Choose a random field name
+            SootField field = this.randElement(sootClass.getFields());
+            if (field != null) {
+                value = field.getName();
+                break;
+            } //else: fall through
+        case 1:
+            // Choose a random method name
+            List<SootMethod> methods = sootClass.getMethods();
+            if (methods.size() > 0) {
+                SootMethod method = methods.get(this.nextUint(methods.size()));
+                value = method.getName();
+                break;
+            } //else: fall through
+        case 2:
+        default:
+            // Choose the className
+            value = sootClass.getShortName();
+        }
+        return StringConstant.v(value);
+    }
+
+    /**
+     * Return a random element in chain
+     * @param <E>
+     * @param chain
+     * @return
+     */
+    public <E> E randElement(Chain<E> chain) {
+        if (chain.size() == 0) {
+            return null;
+        }
+        int index = this.nextUint(chain.size());
+        for (E element : chain) {
+            if (index == 0) {
+                return element;
+            } else {
+                index--;
+            }
+        }
+        return null;
     }
 
     /**
