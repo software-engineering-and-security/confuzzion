@@ -93,8 +93,7 @@ public class Program {
             // TODO: put checks inside constructors
             return mutations; //TODO: remove
         } else if (mutation instanceof ProgramMutation) {
-            // TODO: if ProgramMutation, put checks somewhere ?
-            return mutations; //TODO: remove
+            return mutations;
         } else {
             throw new IllegalArgumentException("mutation is unknown");
         }
