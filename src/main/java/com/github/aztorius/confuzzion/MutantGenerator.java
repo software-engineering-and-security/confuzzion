@@ -183,7 +183,7 @@ public class MutantGenerator {
 
         //TODO: add random object type as parameters
         ArrayList<Type> parameterTypes = new ArrayList<Type>();
-        int numParams = rand.nextUint() % this.MAX_PARAMETERS;
+        int numParams = rand.nextUint(MutantGenerator.MAX_PARAMETERS);
         for (int i = 0; i < numParams; i++) {
             parameterTypes.add(rand.randType(sClass.getName(), false));
         }
@@ -308,7 +308,7 @@ public class MutantGenerator {
 
         // Add random statements
         // TODO: add try catch if necessary
-        int nbStatements = rand.nextUint(this.MAX_STATEMENTS);
+        int nbStatements = rand.nextUint(MutantGenerator.MAX_STATEMENTS);
         for (int i = 0; i < nbStatements; i++) {
             switch (rand.nextUint(3)) {
                 case 0: //Constructor call
@@ -552,7 +552,7 @@ public class MutantGenerator {
     }
 
     private void genMethods() {
-        int count = rand.nextUint(this.MAX_METHODS);
+        int count = rand.nextUint(MutantGenerator.MAX_METHODS);
         for (int i = 0; i < count; i++) {
             this.genMethod();
         }
@@ -574,7 +574,7 @@ public class MutantGenerator {
     }
 
     private void genFields() {
-        int count = rand.nextUint(this.MAX_FIELDS);
+        int count = rand.nextUint(MutantGenerator.MAX_FIELDS);
         for (int i = 0; i < count; i++) {
             this.genField();
         }
