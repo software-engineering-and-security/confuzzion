@@ -197,7 +197,7 @@ public class RandomGenerator {
         return classString;
     }
 
-    public Value randClass(String className) {
+    public Value randClassConstant(String className) {
         String classString = this.randClassName(className);
         return ClassConstant.v(classString.replace(".", "/"));
     }

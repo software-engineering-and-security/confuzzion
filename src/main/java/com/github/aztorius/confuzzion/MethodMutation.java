@@ -96,7 +96,7 @@ public abstract class MethodMutation extends Mutation {
             String className = method.getDeclaringClass().getName();
             Value value = null;
             if (clazz.getName().equals("java.lang.Class")) {
-                value = rand.randClass(className);
+                value = rand.randClassConstant(className);
             } else {
                 value = rand.randString(className);
             }
