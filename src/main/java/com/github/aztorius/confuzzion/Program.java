@@ -5,6 +5,7 @@ import soot.SootClass;
 import soot.SootMethod;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * A Program is a collection of classes with at least one "main" class.
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 public class Program {
     private String classBaseName;
     private ArrayList<Mutant> mutants;
+    private HashSet<SootMethod> executedMethods;
     private RandomGenerator rand;
 
     private static long MUTANTS_NUMBER_LIMIT = 10;
@@ -56,13 +58,14 @@ public class Program {
         // Initialize class fields
         this.classBaseName = classBaseName;
         this.rand = rand;
-        this.mutants = new ArrayList<Mutant>();
+        mutants = new ArrayList<Mutant>();
+        executedMethods = new HashSet<SootMethod>();
 
         // Create first empty Mutant (main class)
         MutantGenerator generator = new MutantGenerator(rand, classBaseName + "0");
         Mutant firstMutant = generator.genEmptyClass();
-        this.mutants.add(firstMutant);
-        this.rand.addStrMutant(firstMutant.getClassName());
+        mutants.add(firstMutant);
+        rand.addStrMutant(firstMutant.getClassName());
     }
 
     public Mutant genNewClass() {
@@ -74,6 +77,9 @@ public class Program {
     }
 
     public void removeClass(Mutant mutant) {
+        for (SootMethod method : mutant.getSootClass().getMethods()) {
+            executedMethods.remove(method);
+        }
         mutants.remove(mutant);
         rand.removeStrMutant(mutant.getClassName());
     }
@@ -146,9 +152,19 @@ public class Program {
     }
 
     private SootMethod randomSootMethod() {
+        // return a random method that is already executed
         SootClass sClass = this.randomSootClass();
-        int idMethod = rand.nextUint(sClass.getMethods().size());
-        return sClass.getMethods().get(idMethod);
+        ArrayList<SootMethod> methods = new ArrayList<SootMethod>();
+        for (SootMethod method : sClass.getMethods()) {
+            if (executedMethods.contains(method)) {
+                methods.add(method);
+            } else if (method.getName().startsWith("<")) {
+                // <init> or <clinit>
+                methods.add(method);
+            }
+        }
+        int idMethod = rand.nextUint(methods.size());
+        return methods.get(idMethod);
     }
 
     private SootClass randomSootClass() {
@@ -174,7 +190,7 @@ public class Program {
             break;
         case 2:
         default:
-            mutation = new CallMethodMutation(rand, method);
+            mutation = new CallMethodMutation(rand, method, executedMethods, mutants);
             break;
         }
         return mutation;

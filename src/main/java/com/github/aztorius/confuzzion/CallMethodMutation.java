@@ -7,11 +7,20 @@ import soot.SootClass;
 import soot.SootMethod;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class CallMethodMutation extends MethodMutation {
-    public CallMethodMutation(RandomGenerator rand, SootMethod method) throws MutationException {
+    private SootMethod calledMethod;
+    private HashSet<SootMethod> methodsSet;
+    private boolean addsNewMethodCall;
+
+    public CallMethodMutation(RandomGenerator rand, SootMethod method,
+            HashSet<SootMethod> methodsSet, ArrayList<Mutant> mutants) throws MutationException {
         super(rand, method);
+        this.methodsSet = methodsSet;
+        this.addsNewMethodCall = false;
+
         Body body = method.getActiveBody();
         Local local = rand.randLocalRef(body.getLocals());
         if (local == null) {
@@ -48,9 +57,32 @@ public class CallMethodMutation extends MethodMutation {
         }
 
         int methodSel = rand.nextUint(availableMethods.size());
-        SootMethod methodTarget = availableMethods.get(methodSel);
+        calledMethod = availableMethods.get(methodSel);
 
         // Call method
-        this.genMethodCall(body, local, methodTarget);
+        this.genMethodCall(body, local, calledMethod);
+
+        // If the method concerns one of the program class and is not currently executed, mark it as executed
+        if (!methodsSet.contains(calledMethod)) {
+            for (Mutant mut : mutants) {
+                if (mut.getSootClass().equals(calledMethod.getDeclaringClass())) {
+                    methodsSet.add(calledMethod);
+                    addsNewMethodCall = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    public SootMethod getCalledMethod() {
+        return calledMethod;
+    }
+
+    @Override
+    public void undo() {
+        super.undo();
+        if (addsNewMethodCall) {
+            methodsSet.remove(calledMethod);
+        }
     }
 }

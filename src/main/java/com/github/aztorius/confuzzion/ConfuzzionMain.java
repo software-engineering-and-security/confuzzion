@@ -144,41 +144,6 @@ public class ConfuzzionMain {
                 continue;
             }
 
-            BodyMutation executedMutation =
-                currentProg.addContractCheck(new ExecutedContract(), mutation);
-            if (executedMutation != null) {
-                // Check if the code is executed and without exception
-                try {
-                    currentProg.genAndLaunch(verbose);
-                    currentProg.removeContractCheck(executedMutation);
-                    mutation.undo();
-                    statusScreen.newMutation(mutation.getClass(),
-                        Status.NOTEXECUTED, 1);
-                    continue;
-                } catch(Throwable e) {
-                    currentProg.removeContractCheck(executedMutation);
-                    if (!ContractCheckException.class.isInstance(Util.getCause(e))) {
-                        mutation.undo();
-                        statusScreen.newMutation(mutation.getClass(),
-                            Status.CRASHED, 1);
-                        continue;
-                    }
-                }
-            } else {
-                // Check if the code does not throw exception
-                try {
-                    currentProg.genAndLaunch(verbose);
-                } catch(Throwable e) {
-                    if (verbose) {
-                        e.printStackTrace();
-                    }
-                    mutation.undo();
-                    statusScreen.newMutation(mutation.getClass(),
-                        Status.CRASHED, 1);
-                    continue;
-                }
-            }
-
             // Add contracts checks
             ArrayList<BodyMutation> contractsMutations =
                 currentProg.addContractsChecks(contracts, mutation);
