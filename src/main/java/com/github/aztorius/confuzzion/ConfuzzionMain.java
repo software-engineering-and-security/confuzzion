@@ -144,6 +144,10 @@ public class ConfuzzionMain {
                 continue;
             }
 
+            if (verbose) {
+                System.err.println("DEBUG: " + mutation.getClass().toString());
+            }
+
             // Add contracts checks
             ArrayList<BodyMutation> contractsMutations =
                 currentProg.addContractsChecks(contracts, mutation);
