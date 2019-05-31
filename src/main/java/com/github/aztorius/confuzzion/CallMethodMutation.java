@@ -5,6 +5,7 @@ import soot.Local;
 import soot.RefType;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.jimple.Jimple;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,27 +15,36 @@ public class CallMethodMutation extends MethodMutation {
     private SootMethod calledMethod;
     private HashSet<SootMethod> methodsSet;
     private boolean addsNewMethodCall;
+    private InitializeMutation initializeMutation;
 
     public CallMethodMutation(RandomGenerator rand, SootMethod method,
             HashSet<SootMethod> methodsSet, ArrayList<Mutant> mutants) throws MutationException {
         super(rand, method);
         this.methodsSet = methodsSet;
-        this.addsNewMethodCall = false;
+        addsNewMethodCall = false;
+        initializeMutation = null;
 
         Body body = method.getActiveBody();
         Local local = rand.randLocalRef(body.getLocals());
         if (local == null) {
-            throw new MutationException(CallMethodMutation.class,
-                    this.mutation,
-                    "No local reference found");
+            local = Jimple.v().newLocal("local" + rand.nextIncrement(), rand.randRefType(method.getDeclaringClass().getName()));
+            mutation.addLocal(local);
+            try {
+                initializeMutation = new InitializeMutation(rand, method, local);
+            } catch(MutationException e) {
+                e.undoMutation();
+                mutation.undo();
+                throw new MutationException(CallMethodMutation.class,
+                        "Cannot generate a value for type " + local.getType().toString());
+            }
         }
 
         RefType type = (RefType)local.getType();
         SootClass sClass = type.getSootClass();
         List<SootMethod> methods = sClass.getMethods();
         if (methods.size() == 0) {
+            this.undo();
             throw new MutationException(CallMethodMutation.class,
-                    this.mutation,
                     "No method available on object " + local.toString());
         }
 
@@ -51,8 +61,8 @@ public class CallMethodMutation extends MethodMutation {
         }
 
         if (availableMethods.size() == 0) {
+            this.undo();
             throw new MutationException(CallMethodMutation.class,
-                    this.mutation,
                     "No public method available on object " + local.toString());
         }
 
@@ -80,9 +90,12 @@ public class CallMethodMutation extends MethodMutation {
 
     @Override
     public void undo() {
-        super.undo();
         if (addsNewMethodCall) {
             methodsSet.remove(calledMethod);
         }
+        if (initializeMutation != null) {
+            initializeMutation.undo();
+        }
+        mutation.undo();
     }
 }
