@@ -10,7 +10,7 @@ import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
 import soot.jimple.NullConstant;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class AddMethodMutation extends ClassMutation {
     private static int MAX_PARAMETERS = 4;
@@ -19,23 +19,20 @@ public class AddMethodMutation extends ClassMutation {
     private AddLocalMutation addedMutation;
 
     public AddMethodMutation(RandomGenerator rand, SootClass sootClass) throws MutationException {
+        this(rand,
+                sootClass,
+                "method" + rand.nextIncrement(),
+                rand.randTypes(sootClass.getName(), AddMethodMutation.MAX_PARAMETERS),
+                rand.randType(sootClass.getName(), true),
+                rand.randModifiers(true));
+    }
+
+    public AddMethodMutation(RandomGenerator rand, SootClass sootClass, String name,
+            List<Type> parameters, Type returnType, int modifiers) throws MutationException {
         super(rand, sootClass);
 
-        String name = "method" + rand.nextIncrement();
-
-        // Add random object type as parameters
-        int numParams = rand.nextUint(AddMethodMutation.MAX_PARAMETERS);
-        ArrayList<Type> parameterTypes = new ArrayList<Type>(numParams);
-        String className = sootClass.getName();
-        for (int i = 0; i < numParams; i++) {
-            parameterTypes.add(rand.randType(className, false));
-        }
-
-        Type returnType = rand.randType(className, true);
-        int modifiers = rand.randModifiers(true);
-
         addedMethod = new SootMethod(name,
-                                     parameterTypes,
+                                     parameters,
                                      returnType,
                                      modifiers);
         JimpleBody body = Jimple.v().newBody(addedMethod);
@@ -51,12 +48,12 @@ public class AddMethodMutation extends ClassMutation {
         }
 
         // Add locals for parameters
-        for (int i = 0; i < parameterTypes.size(); i++) {
-            Local paramLocal = Jimple.v().newLocal("param" + i, parameterTypes.get(i));
+        for (int i = 0; i < parameters.size(); i++) {
+            Local paramLocal = Jimple.v().newLocal("param" + i, parameters.get(i));
             body.getLocals().add(paramLocal);
             body.getUnits().add(
                 Jimple.v().newIdentityStmt(paramLocal,
-                                           Jimple.v().newParameterRef(parameterTypes.get(i), i)));
+                                           Jimple.v().newParameterRef(parameters.get(i), i)));
         }
 
         if (returnType == VoidType.v()) {
@@ -94,6 +91,10 @@ public class AddMethodMutation extends ClassMutation {
         }
 
         sootClass.addMethod(addedMethod);
+    }
+
+    public AddMethodMutation(RandomGenerator rand, SootClass sootClass, SootMethod superMethod) throws MutationException {
+        this(rand, sootClass, superMethod.getName(), superMethod.getParameterTypes(), superMethod.getReturnType(), rand.randModifiers(true));
     }
 
     @Override
