@@ -304,6 +304,20 @@ public class RandomGenerator {
     }
 
     /**
+     * Generate a list of random types
+     * @param className current class name
+     * @param number number of types to return
+     * @return
+     */
+    public List<Type> randTypes(String className, int number) {
+        ArrayList<Type> types = new ArrayList<Type>(number);
+        for (int i = 0; i < number; i++) {
+            types.add(this.randType(className, false));
+        }
+        return types;
+    }
+
+    /**
      * Randomly choose modifiers
      * @param  canBeStatic if true result may have the static modifier
      * @return             random modifiers
