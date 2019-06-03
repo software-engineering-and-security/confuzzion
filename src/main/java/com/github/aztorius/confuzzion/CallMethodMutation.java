@@ -34,8 +34,7 @@ public class CallMethodMutation extends MethodMutation {
             } catch(MutationException e) {
                 e.undoMutation();
                 mutation.undo();
-                throw new MutationException(CallMethodMutation.class,
-                        "Cannot generate a value for type " + local.getType().toString());
+                throw new MutationException(CallMethodMutation.class, e.getMessage());
             }
         }
 
