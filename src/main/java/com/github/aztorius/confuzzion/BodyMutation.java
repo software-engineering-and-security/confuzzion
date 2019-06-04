@@ -36,10 +36,12 @@ public class BodyMutation {
     }
 
     public void addUnit(Unit unit) {
-        this.addedUnits.add(unit);
-        body.getUnits().remove(uReturn);
-        this.body.getUnits().add(unit);
-        body.getUnits().add(uReturn);
+        this.addUnitBefore(unit, uReturn);
+    }
+
+    public void addUnitBefore(Unit toInsert, Unit point) {
+        this.addedUnits.add(toInsert);
+        body.getUnits().insertBefore(toInsert, point);
     }
 
     public List<ValueBox> getUseBoxes() {
