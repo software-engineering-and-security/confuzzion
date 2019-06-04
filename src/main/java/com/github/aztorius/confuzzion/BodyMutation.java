@@ -44,6 +44,11 @@ public class BodyMutation {
         body.getUnits().insertBefore(toInsert, point);
     }
 
+    public void addUnitAfter(Unit toInsert, Unit point) {
+        this.addedUnits.add(toInsert);
+        body.getUnits().insertAfter(toInsert, point);
+    }
+
     public List<ValueBox> getUseBoxes() {
         List<ValueBox> boxes = new ArrayList<ValueBox>();
         for (Unit unit : addedUnits) {
