@@ -110,7 +110,7 @@ public class ConfuzzionMain {
             if (verbose) {
                 System.out.println("===Loop " + loop1 + "===");
             }
-            generator.generate();
+            generator.generate("java.lang.Object");
             Mutant mutant = generator.addContractsChecks(contracts);
         }
     }

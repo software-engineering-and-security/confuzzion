@@ -37,24 +37,28 @@ public class MutantGenerator {
         counter = 0;
     }
 
-    public Mutant genEmptyClass() {
+    public Mutant genEmptyClass(String superClass) {
         //Class
-        this.genClass();
+        this.genClass(superClass);
         //Constructors
-        this.genConstructor();
+        this.genConstructor(superClass);
+        //Override methods
+        this.genOverrideMethods(false);
 
         return this.mutant;
     }
 
-    public Mutant generate() {
+    public Mutant generate(String superClass) {
         //Class
-        this.genClass();
+        this.genClass(superClass);
         //Fields
         this.genFields();
         //Methods
         this.genMethods();
         //Constructors
-        this.genConstructor();
+        this.genConstructor(superClass);
+        //Override methods
+        this.genOverrideMethods(true);
 
         return this.mutant;
     }
@@ -76,8 +80,8 @@ public class MutantGenerator {
         return counter;
     }
 
-    private void genClass() {
-        Scene.v().loadClassAndSupport("java.lang.Object");
+    private void genClass(String superClass) {
+        Scene.v().loadClassAndSupport(superClass);
         try {
             // Add JAR path to SootClassPath
             String path =
@@ -90,12 +94,12 @@ public class MutantGenerator {
         Scene.v().loadClassAndSupport(
             "com.github.aztorius.confuzzion.ContractCheckException");
         SootClass sClass = new SootClass(mutant.getClassName(), Modifier.PUBLIC);
-        sClass.setSuperclass(Scene.v().getSootClass("java.lang.Object"));
+        sClass.setSuperclass(Scene.v().getSootClass(superClass));
         Scene.v().addClass(sClass);
         mutant.setSootClass(sClass);
     }
 
-    private void genConstructor() {
+    private void genConstructor(String superClass) {
         //Add constructor <init>
         SootClass sClass = mutant.getSootClass();
         String name = "<init>";
@@ -119,12 +123,8 @@ public class MutantGenerator {
         body.getUnits().add(
             Jimple.v().newIdentityStmt(r0,
                                        Jimple.v().newThisRef(sClass.getType())));
-        //Add specialinvoke r0.<java.lang.Object: void <init>()>(); statement
-        body.getUnits().add(
-            Jimple.v().newInvokeStmt(
-                Jimple.v().newSpecialInvokeExpr(r0,
-                    Scene.v().getSootClass("java.lang.Object").getMethod("<init>",
-                        new ArrayList<Type>()).makeRef())));
+        //Add specialinvoke r0.<superClass: void <init>(...)>(...); statement
+        this.genMethodCall(body, r0, Scene.v().getSootClass(superClass).getMethodByName("<init>"));
         //Initialize some fields
         for (SootField field: sClass.getFields()) {
             if (!field.isStatic()) {
@@ -177,11 +177,26 @@ public class MutantGenerator {
         body.getUnits().add(Jimple.v().newReturnVoidStmt());
     }
 
+    private void genOverrideMethods(boolean genStatements) {
+        SootClass sClass = mutant.getSootClass();
+        SootClass superClass = sClass.getSuperclass();
+        for (SootMethod method : superClass.getMethods()) {
+            if (method.isAbstract() && !method.isConstructor()) {
+                if (!sClass.declaresMethod(method.getSubSignature())) {
+                    // Add a new method that implements method
+                    int modifiers = method.getModifiers();
+                    if (Modifier.isAbstract(modifiers)) {
+                        modifiers -= Modifier.ABSTRACT;
+                    }
+                    this.addMethod(method.getName(), method.getParameterTypes(), method.getReturnType(), modifiers, genStatements);
+                }
+            }
+        }
+    }
+
     private void genMethod() {
         SootClass sClass = mutant.getSootClass();
         String name = "method" + this.nextInt();
-
-        //TODO: add random object type as parameters
         ArrayList<Type> parameterTypes = new ArrayList<Type>();
         int numParams = rand.nextUint(MutantGenerator.MAX_PARAMETERS);
         for (int i = 0; i < numParams; i++) {
@@ -190,22 +205,28 @@ public class MutantGenerator {
 
         Type returnType = rand.randType(sClass.getName(), true);
         int modifiers = rand.randModifiers(true);
-        //TODO: random (or not) exceptions thrown ?
-        ArrayList<SootClass> thrownExceptions = new ArrayList<SootClass>();
+
+        this.addMethod(name, parameterTypes, returnType, modifiers, true);
+    }
+
+    private void addMethod(String name, List<Type> parameterTypes, Type returnType, int modifiers, boolean genStatements) {
+        SootClass sClass = mutant.getSootClass();
+
         SootMethod method =
             new SootMethod(name,
                            parameterTypes,
                            returnType,
-                           modifiers,
-                           thrownExceptions);
+                           modifiers);
+
+        sClass.addMethod(method);
         JimpleBody body = Jimple.v().newBody(method);
         method.setActiveBody(body);
-        sClass.addMethod(method);
 
         this.genBody(body,
                      returnType,
                      parameterTypes,
-                     (modifiers & Modifier.STATIC) > 0);
+                     Modifier.isStatic(modifiers),
+                     genStatements);
     }
 
     // Generate or find parameters for the specified method call with the local
@@ -283,8 +304,9 @@ public class MutantGenerator {
 
     private void genBody(JimpleBody body,
                          Type returnType,
-                         ArrayList<Type> params,
-                         Boolean isStatic) {
+                         List<Type> params,
+                         Boolean isStatic,
+                         Boolean genStatements) {
         Chain<Local> locals = body.getLocals();
         UnitPatchingChain units = body.getUnits();
         SootClass sClass = mutant.getSootClass();
@@ -306,63 +328,64 @@ public class MutantGenerator {
                                            Jimple.v().newParameterRef(params.get(i), i)));
         }
 
-        // Add random statements
-        // TODO: add try catch if necessary
-        int nbStatements = rand.nextUint(MutantGenerator.MAX_STATEMENTS);
-        for (int i = 0; i < nbStatements; i++) {
-            switch (rand.nextUint(3)) {
-                case 0: //Constructor call
-                    String className = rand.getClassName();
-                    this.genObject(body, className);
-                    break;
-                case 1: //Method call on a local
-                    if (locals.size() <= 0) {
+        if (genStatements) {
+         // Add random statements
+            int nbStatements = rand.nextUint(MutantGenerator.MAX_STATEMENTS);
+            for (int i = 0; i < nbStatements; i++) {
+                switch (rand.nextUint(3)) {
+                    case 0: //Constructor call
+                        String className = rand.getClassName();
+                        this.genObject(body, className);
                         break;
-                    }
-                    Local locSel = null;
-                    int localSel = rand.nextUint(locals.size());
-                    for (Local loc : locals) {
-                        if (localSel > 0) {
-                            localSel--;
-                        } else {
-                            locSel = loc;
+                    case 1: //Method call on a local
+                        if (locals.size() <= 0) {
                             break;
                         }
-                    }
-                    Type type = locSel.getType();
-                    if (type instanceof RefType) {
-                        RefType refType = (RefType)type;
-                        List<SootMethod> methods = refType.getSootClass().getMethods();
-                        if (methods.size() == 0) {
-                            break;
+                        Local locSel = null;
+                        int localSel = rand.nextUint(locals.size());
+                        for (Local loc : locals) {
+                            if (localSel > 0) {
+                                localSel--;
+                            } else {
+                                locSel = loc;
+                                break;
+                            }
                         }
-                        int methodSel = rand.nextUint(methods.size());
-                        SootMethod method = methods.get(methodSel);
-                        if (method.isConstructor() || !method.isPublic()) {
-                            // We should not call the constructor twice !
-                            // nor call a non-Public method
-                            break;
-                        }
+                        Type type = locSel.getType();
+                        if (type instanceof RefType) {
+                            RefType refType = (RefType)type;
+                            List<SootMethod> methods = refType.getSootClass().getMethods();
+                            if (methods.size() == 0) {
+                                break;
+                            }
+                            int methodSel = rand.nextUint(methods.size());
+                            SootMethod method = methods.get(methodSel);
+                            if (method.isConstructor() || !method.isPublic()) {
+                                // We should not call the constructor twice !
+                                // nor call a non-Public method
+                                break;
+                            }
 
-                        // Call method
-                        this.genMethodCall(body, locSel, method);
-                    }
-                    break;
-                default: //Cast
-                    Local loc1 = rand.randLocal(locals);
-                    if (loc1 == null) {
-                        continue;
-                    } else if (!(loc1.getType() instanceof RefType)) {
-                        continue;
-                    }
-                    //TODO; cast to other types
-                    Local loc2 = Jimple.v().newLocal("local" + this.nextInt(),
-                        loc1.getType());
-                    locals.add(loc2);
-                    units.add(
-                        Jimple.v().newAssignStmt(loc2,
-                            Jimple.v().newCastExpr(loc1, loc2.getType())));
-                    //TODO: catch exception if cast should not work
+                            // Call method
+                            this.genMethodCall(body, locSel, method);
+                        }
+                        break;
+                    default: //Cast
+                        Local loc1 = rand.randLocal(locals);
+                        if (loc1 == null) {
+                            continue;
+                        } else if (!(loc1.getType() instanceof RefType)) {
+                            continue;
+                        }
+                        //TODO; cast to other types
+                        Local loc2 = Jimple.v().newLocal("local" + this.nextInt(),
+                            loc1.getType());
+                        locals.add(loc2);
+                        units.add(
+                            Jimple.v().newAssignStmt(loc2,
+                                Jimple.v().newCastExpr(loc1, loc2.getType())));
+                        //TODO: catch exception if cast should not work
+                }
             }
         }
 

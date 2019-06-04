@@ -63,14 +63,15 @@ public class Program {
 
         // Create first empty Mutant (main class)
         MutantGenerator generator = new MutantGenerator(rand, classBaseName + "0");
-        Mutant firstMutant = generator.genEmptyClass();
+        Mutant firstMutant = generator.genEmptyClass("java.lang.Object");
         mutants.add(firstMutant);
         rand.addStrMutant(firstMutant.getClassName());
     }
 
     public Mutant genNewClass() {
         MutantGenerator generator = new MutantGenerator(rand, classBaseName + mutants.size());
-        Mutant addedMutant = generator.genEmptyClass();
+        String superClass = rand.randClassName(classBaseName + mutants.size());
+        Mutant addedMutant = generator.genEmptyClass(superClass);
         this.mutants.add(addedMutant);
         this.rand.addStrMutant(addedMutant.getClassName());
         return addedMutant;
