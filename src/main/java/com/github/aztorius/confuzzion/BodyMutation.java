@@ -16,8 +16,8 @@ public class BodyMutation {
 
     public BodyMutation(Body body) {
         this.body = body;
-        this.addedLocals = new ArrayList<Local>();
-        this.addedUnits = new ArrayList<Unit>();
+        this.addedLocals = new ArrayList<Local>(10);
+        this.addedUnits = new ArrayList<Unit>(10);
         this.uReturn = body.getUnits().getLast();
     }
 
