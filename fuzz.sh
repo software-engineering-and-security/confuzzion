@@ -1,3 +1,3 @@
 #!/bin/sh
 
-java -jar ./target/confuzzion-1.0-SNAPSHOT-jar-with-dependencies.jar $@
+java -Dorg.slf4j.simpleLogger.defaultLogLevel=ERROR -jar ./target/confuzzion-1.0-SNAPSHOT-jar-with-dependencies.jar $@

@@ -8,10 +8,14 @@ import java.util.ArrayList;
 import java.util.Stack;
 import java.util.Timer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ConfuzzionMain {
     private Path resultFolder;
 
     private static long MAIN_LOOP_ITERATIONS = 1000;
+    private static final Logger logger = LoggerFactory.getLogger(ConfuzzionMain.class);
 
     public ConfuzzionMain(Path resultFolder) {
         this.resultFolder = resultFolder;
@@ -28,11 +32,9 @@ public class ConfuzzionMain {
             if (main_loop_iterations_str != null) {
                 main_loop_iterations = Long.parseLong(main_loop_iterations_str);
             }
-
-            boolean verbose = ConfuzzionMain.parseVerbose(args);
             Path resultFolder = ConfuzzionMain.parseDirectory(args);
             ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
-            conf.startMutation(main_loop_iterations, verbose);
+            conf.startMutation(main_loop_iterations);
         } else if (args[0].equals("gen")) {
             long main_loop_iterations = 10;
             String main_loop_iterations_str =
@@ -40,22 +42,12 @@ public class ConfuzzionMain {
             if (main_loop_iterations_str != null) {
                 main_loop_iterations = Long.parseLong(main_loop_iterations_str);
             }
-            boolean verbose = ConfuzzionMain.parseVerbose(args);
             Path resultFolder = ConfuzzionMain.parseDirectory(args);
             ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
-            conf.startGeneration(main_loop_iterations, verbose);
+            conf.startGeneration(main_loop_iterations);
         } else {
             ConfuzzionMain.printHelp();
         }
-    }
-
-    private static boolean parseVerbose(String[] args) {
-        for (String arg : args) {
-            if (arg.equals("-v")) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static Path parseDirectory(String[] args) {
@@ -72,10 +64,9 @@ public class ConfuzzionMain {
             try {
                 Files.createDirectories(resultFolder);
             } catch(IOException e) {
-                System.err.println(
-                "Error while creating result directory. " +
-                "Check permissions and path.");
-                System.err.println("Path: " + resultFolder);
+                logger.error(
+                        "Error while creating result directory.\n" +
+                        "Check permissions and path: {}", resultFolder, e);
             }
         }
 
@@ -95,27 +86,25 @@ public class ConfuzzionMain {
 
     private static void printHelp() {
         System.err.println(
-            "Usage: mut [-v] [-o directory] [-m MAIN_LOOP_ITERATIONS] [-c CONST_LOOP_ITERATIONS]\n" +
-            "       gen [-v] [-m MAIN_LOOP_ITERATIONS]"
+            "Usage: mut [-o directory] [-m MAIN_LOOP_ITERATIONS] [-c CONST_LOOP_ITERATIONS]\n" +
+            "       gen [-m MAIN_LOOP_ITERATIONS]"
         );
     }
 
-    public void startGeneration(long mainloop_turn, boolean verbose) {
+    public void startGeneration(long mainloop_turn) {
         RandomGenerator rand = new RandomGenerator();
         MutantGenerator generator = new MutantGenerator(rand, "Test");
         ArrayList<Contract> contracts = new ArrayList<Contract>();
         contracts.add(new ContractTypeConfusion());
 
         for (long loop1 = 0; loop1 < mainloop_turn; loop1++) {
-            if (verbose) {
-                System.out.println("===Loop " + loop1 + "===");
-            }
+            logger.info("===Loop {}===", loop1);
             generator.generate("java.lang.Object");
             Mutant mutant = generator.addContractsChecks(contracts);
         }
     }
 
-    public void startMutation(long mainloop_turn, boolean verbose) {
+    public void startMutation(long mainloop_turn) {
         RandomGenerator rand = new RandomGenerator();
         ArrayList<Contract> contracts = new ArrayList<Contract>();
         contracts.add(new ContractTypeConfusion());
@@ -136,24 +125,20 @@ public class ConfuzzionMain {
                 // Random mutation (program level | class level | method level)
                 mutation = currentProg.randomMutation();
             } catch (MutationException e) {
-                if (verbose) {
-                    e.printStackTrace();
-                }
+                logger.warn("Exception while applying mutation", e);
                 e.undoMutation();
                 statusScreen.newMutation(e.getMutationClass(), Status.FAILED, 0);
                 continue;
             }
 
-            if (verbose) {
-                System.err.println("DEBUG: " + mutation.getClass().toString());
-            }
+            logger.info("Mutation: {}", mutation.getClass().toString());
 
             // Add contracts checks
             ArrayList<BodyMutation> contractsMutations =
                 currentProg.addContractsChecks(contracts, mutation);
             try {
                 // Instantiation and launch
-                currentProg.genAndLaunch(verbose);
+                currentProg.genAndLaunch();
                 // Remove contracts checks for next turn
                 currentProg.removeContractsChecks(contractsMutations);
                 // Add mutation to the stack
@@ -161,9 +146,7 @@ public class ConfuzzionMain {
                 // Update status screen
                 statusScreen.newMutation(mutation.getClass(), Status.SUCCESS, 2);
             } catch(Throwable e) {
-                if (verbose) {
-                    e.printStackTrace();
-                }
+                logger.warn("Exception while executing program", e);
                 Throwable cause = Util.getCause(e);
                 if (ContractCheckException.class.isInstance(cause)) {
                     // Save current classes to a unique folder
@@ -173,13 +156,7 @@ public class ConfuzzionMain {
                     try {
                         Files.createDirectories(folder);
                     } catch(IOException e2) {
-                        e.printStackTrace();
-                        System.err.println(
-                            "Error while creating result directory." +
-                            "Check permissions and path.");
-                        System.err.println("Path: " + folder);
-                        System.err.println("Printing last program generated");
-                        System.err.println(currentProg.toString());
+                        logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                         break;
                     }
                     currentProg.saveToFolder(folder.toString());

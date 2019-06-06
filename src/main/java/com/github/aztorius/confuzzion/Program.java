@@ -7,6 +7,9 @@ import soot.SootMethod;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * A Program is a collection of classes with at least one "main" class.
  * Each class is represented as a Mutant that can evolve.
@@ -21,6 +24,7 @@ public class Program {
 
     private static long MUTANTS_NUMBER_LIMIT = 10;
     private static int TIME_LIMIT_MILISECONDS = 1000;
+    private static final Logger logger = LoggerFactory.getLogger(Program.class);
 
     class Launcher implements Runnable {
         private ByteClassLoader loader;
@@ -264,17 +268,16 @@ public class Program {
 
     /**
      * Generate and Instantiate all Mutants inside this program
-     * @param  verbose   if true print debug info
      * @throws Throwable can throw any type of Throwable or InterruptedException
      */
-    public void genAndLaunch(boolean verbose) throws Throwable {
+    public void genAndLaunch() throws Throwable {
         ByteClassLoader loader =
             new ByteClassLoader(Thread.currentThread().getContextClassLoader());
         for (int i = mutants.size() - 1; i >= 0; i--) {
             Mutant mut = mutants.get(i);
-            if (verbose) {
-                System.out.println("===Class " + classBaseName + i + "===");
-                mut.toStdOut();
+            if (logger.isDebugEnabled()) {
+                logger.debug("===Class {}{}===", classBaseName, i);
+                logger.debug(mut.toString());
             }
             byte[] array = mut.toClass();
             Launcher launcher = new Launcher(loader, array, classBaseName + i);

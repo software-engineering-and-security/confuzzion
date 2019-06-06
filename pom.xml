@@ -30,6 +30,14 @@
       <artifactId>soot</artifactId>
       <version>3.3.0</version>
     </dependency>
+
+    <!-- slf4j logger implementation using Simple logger -->
+     <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>1.7.26</version>
+        <scope>runtime</scope>
+      </dependency>
   </dependencies>
 
   <build>
