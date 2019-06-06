@@ -11,7 +11,9 @@ import soot.SootMethod;
 import soot.Type;
 import soot.Value;
 import soot.ValueBox;
+import soot.VoidType;
 import soot.jimple.Constant;
+import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
 import soot.util.Chain;
 
@@ -253,14 +255,12 @@ public abstract class MethodMutation extends Mutation {
     protected void genMethodCall(Body body,
                                  Local local,
                                  SootMethod method) {
-        Chain<Local> locals = body.getLocals();
-
         // Generate parameters
         List<Type> parameterTypes = method.getParameterTypes();
         ArrayList<Value> parameters = new ArrayList<Value>();
         Boolean found = false;
         for (Type paramType : parameterTypes) {
-            for (Local loc : locals) {
+            for (Local loc : body.getLocals()) {
                 if (loc.getType() == paramType) {
                     found = true;
                     parameters.add(loc);
@@ -293,30 +293,26 @@ public abstract class MethodMutation extends Mutation {
             parameters.add(locParam);
         }
 
+        InvokeExpr methodCallExpr = null;
+
         // Add method call to units
         if (method.isStatic()) {
-            mutation.addUnit(
-                Jimple.v().newInvokeStmt(
-                    Jimple.v().newStaticInvokeExpr(method.makeRef(),
-                                                   parameters)));
+            methodCallExpr = Jimple.v().newStaticInvokeExpr(method.makeRef(), parameters);
         } else if (method.isConstructor()) {
-            mutation.addUnit(
-                Jimple.v().newInvokeStmt(
-                    Jimple.v().newSpecialInvokeExpr(local,
-                                                    method.makeRef(),
-                                                    parameters)));
+            methodCallExpr = Jimple.v().newSpecialInvokeExpr(local, method.makeRef(), parameters);
         } else if (method.getDeclaringClass().isInterface()) {
-            mutation.addUnit(
-                Jimple.v().newInvokeStmt(
-                    Jimple.v().newInterfaceInvokeExpr(local,
-                                                      method.makeRef(),
-                                                      parameters)));
+            methodCallExpr = Jimple.v().newInterfaceInvokeExpr(local, method.makeRef(), parameters);
         } else {
-            mutation.addUnit(
-                Jimple.v().newInvokeStmt(
-                    Jimple.v().newVirtualInvokeExpr(local,
-                                                    method.makeRef(),
-                                                    parameters)));
+            methodCallExpr = Jimple.v().newVirtualInvokeExpr(local, method.makeRef(), parameters);
+        }
+
+        Type returnType = method.getReturnType();
+        if (returnType.equals(VoidType.v())) {
+            mutation.addUnit(Jimple.v().newInvokeStmt(methodCallExpr));
+        } else {
+            Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(), returnType);
+            mutation.addLocal(loc);
+            mutation.addUnit(Jimple.v().newAssignStmt(loc, methodCallExpr));
         }
     }
 }
