@@ -53,7 +53,8 @@ public class CallMethodMutation extends MethodMutation {
             // nor call a non-Public method on an external class
             if (!m.isConstructor() &&
                 !m.getName().startsWith("<")) {
-                if ((sClass == method.getDeclaringClass() && m != method) || m.isPublic()) {
+                if ((sClass == method.getDeclaringClass() && m != method) ||
+                        (sClass != method.getDeclaringClass() && m.isPublic())) {
                     availableMethods.add(m);
                 }
             }
