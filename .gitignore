@@ -1,4 +1,4 @@
-confuzzionResults/
+confuzzionResults
 target/
 fuzz-results
 **/*.class
