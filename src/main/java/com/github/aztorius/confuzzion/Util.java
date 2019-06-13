@@ -71,6 +71,7 @@ public class Util {
         String path = Paths.get(System.getProperty("java.home"), "bin", "java").toString();
         ProcessBuilder processBuilder = new ProcessBuilder(path, "-cp", classpath + ":" + Util.getJarPath(), className);
         logger.info("{}", processBuilder.command());
+        processBuilder.redirectError(new File(Paths.get(classpath, "stderr.txt").toString()));
         Process process = processBuilder.start();
         process.waitFor(timeoutMiliseconds, TimeUnit.MILLISECONDS);
         if (process.isAlive()) {
