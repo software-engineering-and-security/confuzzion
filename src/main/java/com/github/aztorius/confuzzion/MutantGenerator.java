@@ -15,11 +15,14 @@ import soot.Value;
 import soot.VoidType;
 import soot.jimple.Jimple;
 import soot.jimple.JimpleBody;
+import soot.jimple.NullConstant;
 import soot.util.Chain;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MutantGenerator {
     private Mutant mutant;
@@ -30,11 +33,41 @@ public class MutantGenerator {
     private static int MAX_METHODS = 20;
     private static int MAX_PARAMETERS = 3;
     private static int MAX_STATEMENTS = 10;
+    private static final Logger logger = LoggerFactory.getLogger(MutantGenerator.class);
 
     public MutantGenerator(RandomGenerator rand, String className) {
         this.rand = rand;
         mutant = new Mutant(className);
         counter = 0;
+    }
+
+    public Mutant genMainLoader(List<Mutant> mutants) {
+        //Class
+        this.genClass("java.lang.Object");
+        //Constructor
+        this.genConstructor("java.lang.Object");
+        SootMethod constructor = mutant.getSootClass().getMethodByName("<init>");
+        //Main
+        SootMethod main = this.genMain();
+        //Add call to Main constructor
+        UnitPatchingChain mainUnits = main.getActiveBody().getUnits();
+        Chain<Local> mainLocals = main.getActiveBody().getLocals();
+        RefType mainType = mutant.getSootClass().getType();
+        Local mainlocal = Jimple.v().newLocal("mainlocal", mainType);
+        mainLocals.add(mainlocal);
+        mainUnits.insertBefore(Jimple.v().newAssignStmt(mainlocal, Jimple.v().newNewExpr(mainType)), mainUnits.getLast());
+        mainUnits.insertBefore(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(mainlocal, constructor.makeRef())), mainUnits.getLast());
+        //Add calls to each Mutant constructor
+        UnitPatchingChain consUnits = constructor.getActiveBody().getUnits();
+        Chain<Local> consLocals = constructor.getActiveBody().getLocals();
+        for (Mutant mut : mutants) {
+            RefType mutType = mut.getSootClass().getType();
+            Local mutlocal = Jimple.v().newLocal(mut.getClassName().toLowerCase(), mutType);
+            consLocals.add(mutlocal);
+            consUnits.insertBefore(Jimple.v().newAssignStmt(mutlocal, Jimple.v().newNewExpr(mutType)), consUnits.getLast());
+            consUnits.insertBefore(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(mutlocal, mut.getSootClass().getMethodByName("<init>").makeRef())), consUnits.getLast());
+        }
+        return this.mutant;
     }
 
     public Mutant genEmptyClass(String superClass) {
@@ -81,20 +114,8 @@ public class MutantGenerator {
     }
 
     private void genClass(String superClass) {
-        Scene.v().loadClassAndSupport(superClass);
-        try {
-            // Add JAR path to SootClassPath
-            String path =
-                new File(
-                    Mutant.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();
-            Scene.v().extendSootClassPath(path);
-        } catch(java.net.URISyntaxException e) {
-            e.printStackTrace();
-        }
-        Scene.v().loadClassAndSupport(
-            "com.github.aztorius.confuzzion.ContractCheckException");
         SootClass sClass = new SootClass(mutant.getClassName(), Modifier.PUBLIC);
-        sClass.setSuperclass(Scene.v().getSootClass(superClass));
+        sClass.setSuperclass(Util.getOrLoadSootClass(superClass));
         Scene.v().addClass(sClass);
         mutant.setSootClass(sClass);
     }
@@ -106,13 +127,11 @@ public class MutantGenerator {
         ArrayList<Type> parameterTypes = new ArrayList<Type>();
         Type returnType = VoidType.v();
         int modifiers = Modifier.PUBLIC | Modifier.CONSTRUCTOR;
-        ArrayList<SootClass> thrownExceptions = new ArrayList<SootClass>();
         SootMethod method =
             new SootMethod(name,
                            parameterTypes,
                            returnType,
-                           modifiers,
-                           thrownExceptions);
+                           modifiers);
         JimpleBody body = Jimple.v().newBody(method);
         method.setActiveBody(body);
         sClass.addMethod(method);
@@ -123,8 +142,21 @@ public class MutantGenerator {
         body.getUnits().add(
             Jimple.v().newIdentityStmt(r0,
                                        Jimple.v().newThisRef(sClass.getType())));
+        //Find super constructor
+        SootMethod constructor = null;
+        String classLoopStr = superClass;
+        do {
+            SootClass classLoop = Scene.v().getSootClass(classLoopStr);
+            constructor = classLoop.getMethodByNameUnsafe("<init>");
+            SootClass superClassLoop = classLoop.getSuperclassUnsafe();
+            if (superClassLoop == null) {
+                classLoopStr = "java.lang.Object";
+            } else {
+                classLoopStr = superClassLoop.getName();
+            }
+        } while (constructor == null);
         //Add specialinvoke r0.<superClass: void <init>(...)>(...); statement
-        this.genMethodCall(body, r0, Scene.v().getSootClass(superClass).getMethodByName("<init>"));
+        this.genMethodCall(body, r0, constructor);
         //Initialize some fields
         for (SootField field: sClass.getFields()) {
             if (!field.isStatic()) {
@@ -194,6 +226,16 @@ public class MutantGenerator {
         }
     }
 
+    private SootMethod genMain() {
+        String name = "main";
+        ArrayList<Type> parameterTypes = new ArrayList<Type>();
+        SootClass stringClass = Util.getOrLoadSootClass("java.lang.String");
+        parameterTypes.add(stringClass.getType().makeArrayType());
+        Type returnType = VoidType.v();
+        int modifiers = Modifier.PUBLIC + Modifier.STATIC;
+        return this.addMethod(name, parameterTypes, returnType, modifiers, false);
+    }
+
     private void genMethod() {
         SootClass sClass = mutant.getSootClass();
         String name = "method" + this.nextInt();
@@ -209,7 +251,7 @@ public class MutantGenerator {
         this.addMethod(name, parameterTypes, returnType, modifiers, true);
     }
 
-    private void addMethod(String name, List<Type> parameterTypes, Type returnType, int modifiers, boolean genStatements) {
+    private SootMethod addMethod(String name, List<Type> parameterTypes, Type returnType, int modifiers, boolean genStatements) {
         SootClass sClass = mutant.getSootClass();
 
         SootMethod method =
@@ -227,6 +269,7 @@ public class MutantGenerator {
                      parameterTypes,
                      Modifier.isStatic(modifiers),
                      genStatements);
+        return method;
     }
 
     // Generate or find parameters for the specified method call with the local
@@ -429,12 +472,9 @@ public class MutantGenerator {
         Chain<Local> locals = body.getLocals();
         UnitPatchingChain units = body.getUnits();
 
-        Scene.v().loadClassAndSupport(strObj);
-
-        SootClass clazz = Scene.v().getSootClass(strObj);
+        SootClass clazz = Util.getOrLoadSootClass(strObj);
         if (!clazz.isPublic()) {
-            //TODO: debug: cannot built an object of this type
-            // System.out.println("DEBUG: GEN: cannot build an object of the type");
+            logger.warn("Cannot build an object of the type {}", strObj);
             return null;
         }
 
@@ -534,8 +574,7 @@ public class MutantGenerator {
             Value loc = this.genObject(body, param.toString());
             if (loc == null) {
                 // If a parameter cannot be built use a null value.
-                // TODO: catch IllegalArgumentException
-                loc = soot.jimple.NullConstant.v();
+                loc = NullConstant.v();
             }
             parameters.add(loc);
         }
@@ -544,25 +583,24 @@ public class MutantGenerator {
 
         if (!constructor.isStatic()) {
             // Create local
-            loc = Jimple.v().newLocal("local" + this.nextInt(),
-            clazz.getType());
+            loc = Jimple.v().newLocal("local" + this.nextInt(), clazz.getType());
             locals.add(loc);
             // Assign local value
             units.add(Jimple.v().newAssignStmt(loc,
-                Jimple.v().newNewExpr(clazz.getType())));
+                    Jimple.v().newNewExpr(clazz.getType())));
             // Call constructor
             units.add(Jimple.v().newInvokeStmt(
-                Jimple.v().newSpecialInvokeExpr(loc,
-                    constructor.makeRef(), parameters)));
+                    Jimple.v().newSpecialInvokeExpr(loc,
+                            constructor.makeRef(), parameters)));
             return loc;
         } else { // Static method call
             // Create local
             loc = Jimple.v().newLocal("local" + this.nextInt(),
-                constructor.getReturnType());
+                    constructor.getReturnType());
             locals.add(loc);
             // Assign the static method call return value
             units.add(Jimple.v().newAssignStmt(loc,
-                Jimple.v().newStaticInvokeExpr(constructor.makeRef(), parameters)));
+                    Jimple.v().newStaticInvokeExpr(constructor.makeRef(), parameters)));
 
             if (constructor.getReturnType() == clazz.getType()) {
                 return loc;
@@ -587,9 +625,7 @@ public class MutantGenerator {
         Type type = rand.randPrimType();
         // ...or a target object
         if (rand.nextBoolean()) {
-            String className = rand.getClassName();
-            Scene.v().loadClassAndSupport(className);
-            SootClass clazz = Scene.v().getSootClass(className);
+            SootClass clazz = Util.getOrLoadSootClass(rand.getClassName());
             type = clazz.getType();
         }
         int modifiers = rand.randModifiers(true);
