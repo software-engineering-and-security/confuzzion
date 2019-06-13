@@ -23,8 +23,7 @@ public class ContractTypeConfusion implements Contract {
     @Override
     public BodyMutation applyCheck(Body body) {
         BodyMutation mutation = new BodyMutation(body);
-        SootClass exception = Scene.v().getSootClass(
-            "com.github.aztorius.confuzzion.ContractCheckException");
+        SootClass exception = Util.getOrLoadSootClass("com.github.aztorius.confuzzion.ContractCheckException");
         SootMethod mExceptionInit = exception.getMethodByName("<init>");
         SootClass clazz = Scene.v().getSootClass("java.lang.Class");
         SootMethod isInstance = clazz.getMethodByName("isInstance");

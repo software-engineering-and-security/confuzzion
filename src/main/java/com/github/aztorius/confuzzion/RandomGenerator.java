@@ -10,7 +10,6 @@ import soot.Local;
 import soot.LongType;
 import soot.Modifier;
 import soot.RefType;
-import soot.Scene;
 import soot.ShortType;
 import soot.SootClass;
 import soot.SootField;
@@ -209,8 +208,7 @@ public class RandomGenerator {
      */
     public Value randString(String className) {
         // Choose a random class
-        String classString = this.randClassName(className);
-        SootClass sootClass = Scene.v().loadClassAndSupport(classString);
+        SootClass sootClass = Util.getOrLoadSootClass(this.randClassName(className));
         String value = null;
         switch(this.nextUint(3)) {
         case 0:
@@ -282,9 +280,7 @@ public class RandomGenerator {
      * @return           random RefType
      */
     public Type randRefType(String className) {
-        String strClass = this.randClassName(className);
-        Scene.v().loadClassAndSupport(strClass);
-        return Scene.v().getRefType(strClass);
+        return Util.getOrLoadSootClass(this.randClassName(className)).getType();
     }
 
     /**

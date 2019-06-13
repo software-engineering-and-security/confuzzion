@@ -4,7 +4,6 @@ import soot.ArrayType;
 import soot.Body;
 import soot.Local;
 import soot.PrimType;
-import soot.Scene;
 import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
@@ -82,9 +81,7 @@ public abstract class MethodMutation extends Mutation {
     protected Local genObject(Body body, String strObj) {
         Chain<Local> locals = body.getLocals();
 
-        Scene.v().loadClassAndSupport(strObj);
-
-        SootClass clazz = Scene.v().getSootClass(strObj);
+        SootClass clazz = Util.getOrLoadSootClass(strObj);
         if (!clazz.isPublic()) {
             return null;
         }
