@@ -4,6 +4,7 @@ import soot.Body;
 import soot.SootClass;
 import soot.SootMethod;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -23,20 +24,36 @@ public class Program {
     private RandomGenerator rand;
 
     private static long MUTANTS_NUMBER_LIMIT = 10;
-    private static int TIME_LIMIT_MILISECONDS = 1000;
     private static final Logger logger = LoggerFactory.getLogger(Program.class);
+
+    class Handler implements UncaughtExceptionHandler {
+        private Throwable e;
+
+        public Handler() {
+            e = null;
+        }
+
+        @Override
+        public void uncaughtException(Thread thread, Throwable throwable) {
+            e = throwable;
+        }
+
+        public void throwException() throws Throwable {
+            if (e != null) {
+                throw e;
+            }
+        }
+    }
 
     class Launcher implements Runnable {
         private ByteClassLoader loader;
         private byte[] bytecode;
         private String className;
-        public Throwable exception;
 
         public Launcher(ByteClassLoader loader, byte[] bytecode, String className) {
             this.loader = loader;
             this.bytecode = bytecode;
             this.className = className;
-            this.exception = null;
         }
 
         @Override
@@ -47,8 +64,10 @@ public class Program {
                 //TODO: Method[] methods = clazz.getMethods();
                 //TODO: invoke methods ?: method.invoke(clazz.newInstance());
             } catch(Throwable e) {
-                this.exception = e;
-                Thread.currentThread().interrupt();
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                throw new RuntimeException(e);
             }
         }
     }
@@ -267,12 +286,14 @@ public class Program {
     }
 
     /**
-     * Generate and Instantiate all Mutants inside this program
+     * Generate and launch program within a separate Thread
+     * Warning: this will not kill threads within a while(true) loop. Use genAndLaunchWithJVM() instead
+     * @param timeout in milliseconds before interrupting the Thread
      * @throws Throwable can throw any type of Throwable or InterruptedException
      */
-    public void genAndLaunch() throws Throwable {
+    public void genAndLaunch(int timeout) throws Throwable {
         ByteClassLoader loader =
-            new ByteClassLoader(Thread.currentThread().getContextClassLoader());
+                new ByteClassLoader(Thread.currentThread().getContextClassLoader());
         for (int i = mutants.size() - 1; i >= 0; i--) {
             Mutant mut = mutants.get(i);
             if (logger.isDebugEnabled()) {
@@ -282,16 +303,30 @@ public class Program {
             byte[] array = mut.toClass();
             Launcher launcher = new Launcher(loader, array, classBaseName + i);
             Thread thread = new Thread(launcher);
+            Handler handler = new Handler();
+            thread.setUncaughtExceptionHandler(handler);
             thread.start();
-            thread.join(TIME_LIMIT_MILISECONDS);
+            thread.join(timeout);
             if (thread.isAlive()) {
                 thread.interrupt();
                 throw new InterruptedException();
             }
-            if (launcher.exception != null) {
-                throw launcher.exception;
-            }
+            handler.throwException();
         }
+    }
+
+    /**
+     * Generate and launch program within a separate JVM
+     * @param folder
+     * @param timeout in milliseconds before killing the JVM
+     * @throws Throwable
+     */
+    public void genAndLaunchWithJVM(String folder, int timeout) throws Throwable {
+        this.saveToFolder(folder);
+        MutantGenerator gen = new MutantGenerator(rand, "Main");
+        Mutant mut = gen.genMainLoader(mutants);
+        mut.toClassFile(folder);
+        Util.startJVM(folder, mut.getClassName(), timeout);
     }
 
     /**
