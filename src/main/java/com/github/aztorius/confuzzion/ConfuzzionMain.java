@@ -196,6 +196,8 @@ public class ConfuzzionMain {
                         logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                         break;
                     }
+                    currentProg.saveAsClassFiles(folder2.toString());
+                    currentProg.saveAsJimpleFiles(folder2.toString());
                     // Update status screen
                     statusScreen.newMutation(mutation.getClass(),
                         Status.VIOLATES, 2);
