@@ -172,7 +172,15 @@ public class MutantGenerator {
         String classLoopStr = superClass;
         do {
             SootClass classLoop = Scene.v().getSootClass(classLoopStr);
-            constructor = classLoop.getMethodByNameUnsafe("<init>");
+            ArrayList<SootMethod> constructors = new ArrayList<SootMethod>(5);
+            for (SootMethod m : classLoop.getMethods()) {
+                if (m.isConstructor()) {
+                    constructors.add(m);
+                }
+            }
+            if (constructors.size() > 0) {
+                constructor = constructors.get(rand.nextUint(constructors.size()));
+            }
             SootClass superClassLoop = classLoop.getSuperclassUnsafe();
             if (superClassLoop == null) {
                 classLoopStr = "java.lang.Object";
