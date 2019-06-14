@@ -10,6 +10,7 @@ import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
 import soot.Type;
+import soot.Unit;
 import soot.UnitPatchingChain;
 import soot.Value;
 import soot.VoidType;
@@ -57,16 +58,40 @@ public class MutantGenerator {
         mainLocals.add(mainlocal);
         mainUnits.insertBefore(Jimple.v().newAssignStmt(mainlocal, Jimple.v().newNewExpr(mainType)), mainUnits.getLast());
         mainUnits.insertBefore(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(mainlocal, constructor.makeRef())), mainUnits.getLast());
+
         //Add calls to each Mutant constructor
         UnitPatchingChain consUnits = constructor.getActiveBody().getUnits();
         Chain<Local> consLocals = constructor.getActiveBody().getLocals();
+        Unit beginStmt = Jimple.v().newNopStmt();
+        consUnits.insertBefore(beginStmt, consUnits.getLast());
         for (Mutant mut : mutants) {
             RefType mutType = mut.getSootClass().getType();
             Local mutlocal = Jimple.v().newLocal(mut.getClassName().toLowerCase(), mutType);
             consLocals.add(mutlocal);
+            // TestX testx = new TestX();
             consUnits.insertBefore(Jimple.v().newAssignStmt(mutlocal, Jimple.v().newNewExpr(mutType)), consUnits.getLast());
             consUnits.insertBefore(Jimple.v().newInvokeStmt(Jimple.v().newSpecialInvokeExpr(mutlocal, mut.getSootClass().getMethodByName("<init>").makeRef())), consUnits.getLast());
         }
+        // return;
+        Unit endStmt = Jimple.v().newReturnVoidStmt();
+        consUnits.insertBefore(endStmt, consUnits.getLast());
+        SootClass contractExceptionClass = Util.getOrLoadSootClass("com.github.aztorius.confuzzion.ContractCheckException");
+        SootClass throwableClass = Util.getOrLoadSootClass("java.lang.Throwable");
+        // Throwable e := @caughtexception;
+        Local caughtException = Jimple.v().newLocal("localexcept" + rand.nextIncrement(), throwableClass.getType());
+        consLocals.add(caughtException);
+        Unit handlerStmt = Jimple.v().newIdentityStmt(caughtException, Jimple.v().newCaughtExceptionRef());
+        consUnits.insertBefore(handlerStmt, consUnits.getLast());
+        // e.printStackTrace();
+        consUnits.insertBefore(Jimple.v().newInvokeStmt(Jimple.v().newVirtualInvokeExpr(caughtException, throwableClass.getMethod("printStackTrace", new ArrayList<Type>()).makeRef())), consUnits.getLast());
+        SootClass runtimeClass = Util.getOrLoadSootClass("java.lang.Runtime");
+        // Runtime.getRuntime().exit(ERRORCODE_VIOLATION);
+        Local runtimeLocal = Jimple.v().newLocal("localexcept" + rand.nextIncrement(), runtimeClass.getType());
+        consLocals.add(runtimeLocal);
+        consUnits.insertBefore(Jimple.v().newAssignStmt(runtimeLocal, Jimple.v().newStaticInvokeExpr(runtimeClass.getMethodByName("getRuntime").makeRef())), consUnits.getLast());
+        consUnits.insertBefore(Jimple.v().newInvokeStmt(Jimple.v().newVirtualInvokeExpr(runtimeLocal, runtimeClass.getMethodByName("exit").makeRef(), soot.jimple.IntConstant.v(Util.ERRORCODE_VIOLATION))), consUnits.getLast());
+        // Declare new try-catch
+        constructor.getActiveBody().getTraps().add(Jimple.v().newTrap(contractExceptionClass, beginStmt, endStmt, handlerStmt));
         return this.mutant;
     }
 
