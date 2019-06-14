@@ -3,6 +3,7 @@ package com.github.aztorius.confuzzion;
 import soot.Body;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Type;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
@@ -156,11 +157,12 @@ public class Program {
             MethodMutation mMutation = (MethodMutation)mutation;
             body = mMutation.getBody();
         } else if (mutation instanceof ClassMutation) {
-            // TODO: put checks inside constructors
-            return bodyMutation; //TODO: remove
+            // Get the body of constructor with no parameters
+            ClassMutation cMutation = (ClassMutation)mutation;
+            body = cMutation.getSootClass().getMethod("<init>", new ArrayList<Type>()).getActiveBody();
         } else if (mutation instanceof ProgramMutation) {
-            // TODO: if ProgramMutation, put checks somewhere ?
-            return bodyMutation; //TODO: remove
+            // No checks with a ProgramMutation
+            return bodyMutation;
         } else {
             throw new IllegalArgumentException("mutation is unknown");
         }

@@ -9,4 +9,8 @@ public abstract class ClassMutation extends Mutation {
         super(rand);
         this.sootClass = sootClass;
     }
+
+    public SootClass getSootClass() {
+        return sootClass;
+    }
 }
