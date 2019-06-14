@@ -80,7 +80,6 @@ public class Util {
             process.destroyForcibly();
             throw new InterruptedException();
         }
-        //TODO: check if errorCode is a contract check failure code
         int errorCode = process.exitValue();
         if (errorCode != 0) {
             if (errorCode == Util.ERRORCODE_VIOLATION) {
