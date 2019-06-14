@@ -18,6 +18,8 @@ import soot.Scene;
 import soot.SootClass;
 
 public class Util {
+    public static final int ERRORCODE_VIOLATION = 200;
+
     private static HashMap<String, String> childMap;
     private static final Logger logger = LoggerFactory.getLogger(Util.class);
 
@@ -81,6 +83,9 @@ public class Util {
         //TODO: check if errorCode is a contract check failure code
         int errorCode = process.exitValue();
         if (errorCode != 0) {
+            if (errorCode == Util.ERRORCODE_VIOLATION) {
+                throw new ContractCheckException();
+            }
             throw new RuntimeException("Error code " + errorCode);
         }
     }
