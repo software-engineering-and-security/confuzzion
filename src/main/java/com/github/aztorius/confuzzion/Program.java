@@ -322,7 +322,7 @@ public class Program {
      * @throws Throwable
      */
     public void genAndLaunchWithJVM(String folder, int timeout) throws Throwable {
-        this.saveToFolder(folder);
+        this.saveAsClassFiles(folder);
         MutantGenerator gen = new MutantGenerator(rand, "Main");
         Mutant mut = gen.genMainLoader(mutants);
         mut.toClassFile(folder);
@@ -330,12 +330,21 @@ public class Program {
     }
 
     /**
-     * Save all classes of this program in a folder
-     * @param folder destination folder
+     * Save all classes of this program
+     * @param folder destination
      */
-    public void saveToFolder(String folder) {
+    public void saveAsClassFiles(String folder) {
         for (Mutant mut : mutants) {
             mut.toClassFile(folder);
+        }
+    }
+
+    /**
+     * Save all classes as Jimple source files
+     * @param folder destination
+     */
+    public void saveAsJimpleFiles(String folder) {
+        for (Mutant mut : mutants) {
             mut.toJimpleFile(folder);
         }
     }
