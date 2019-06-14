@@ -59,6 +59,7 @@ public class RandomGenerator {
         strClasses = new ArrayList<String>();
         strClasses.add("java.lang.invoke.MethodHandles");
         strClasses.add("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
+        strClasses.add("java.lang.Integer");
         strMutants = new ArrayList<String>();
     }
 
