@@ -13,6 +13,14 @@ import org.slf4j.LoggerFactory;
 
 import soot.Scene;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
 public class ConfuzzionMain {
     private Path resultFolder;
 
@@ -27,100 +35,125 @@ public class ConfuzzionMain {
     }
 
     public static void main(String args[]) {
-        if (args.length < 1) {
-            ConfuzzionMain.printHelp();
-        } else if (args[0].equals("mut")) {
-            long main_loop_iterations = ConfuzzionMain.MAIN_LOOP_ITERATIONS;
-            int timeout = ConfuzzionMain.TIMEOUT;
-            int stackLimit = ConfuzzionMain.STACK_LIMIT;
-            boolean withJVM = ConfuzzionMain.WITH_JVM;
-            String javahome = System.getProperty("java.home");
+        final Options options = configParameters();
+        CommandLineParser parser = new DefaultParser();
 
-            String main_loop_iterations_str =
-                ConfuzzionMain.parseOption(args, "-m");
-            if (main_loop_iterations_str != null) {
-                main_loop_iterations = Long.parseLong(main_loop_iterations_str);
+        Path resultFolder = Paths.get("confuzzionResults/");
+        long main_loop_iterations = ConfuzzionMain.MAIN_LOOP_ITERATIONS;
+        int timeout = ConfuzzionMain.TIMEOUT;
+        int stackLimit = ConfuzzionMain.STACK_LIMIT;
+        boolean withJVM = ConfuzzionMain.WITH_JVM;
+        String javahome = System.getProperty("java.home");
+
+        try {
+            CommandLine line = parser.parse(options, args);
+
+            if (line.hasOption("h")) {
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp("confuzzion", options);
+                return;
+            }
+            if (line.hasOption("o")) {
+                resultFolder = Paths.get(line.getOptionValue("o"));
+            }
+            if (line.hasOption("i")) {
+                main_loop_iterations = Long.parseLong(line.getOptionValue("i"));
+            }
+            if (line.hasOption("t")) {
+                timeout = Integer.parseInt(line.getOptionValue("t"));
+            }
+            if (line.hasOption("l")) {
+                stackLimit = Integer.parseInt(line.getOptionValue("l"));
+            }
+            withJVM = !line.hasOption("threads");
+            if (line.hasOption("j")) {
+                javahome = line.getOptionValue("j");
             }
 
-            Path resultFolder = ConfuzzionMain.parseDirectory(args);
-            ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
-
-            String timeout_str = ConfuzzionMain.parseOption(args, "-t");
-            if (timeout_str != null) {
-                timeout = Integer.parseInt(timeout_str);
-            }
-
-            String stack_limit_str = ConfuzzionMain.parseOption(args, "-l");
-            if (stack_limit_str != null) {
-                stackLimit = Integer.parseInt(stack_limit_str);
-            }
-
-            String withjvm_str = ConfuzzionMain.parseOption(args, "-r");
-            if (withjvm_str != null) {
-                withJVM = !withjvm_str.equalsIgnoreCase("thread");
-            }
-
-            String javahome_str = ConfuzzionMain.parseOption(args, "-j");
-            if (javahome_str != null) {
-                javahome = javahome_str;
-            }
-
-            conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome);
-        } else if (args[0].equals("gen")) {
-            long main_loop_iterations = 10;
-            String main_loop_iterations_str =
-                ConfuzzionMain.parseOption(args, "-m");
-            if (main_loop_iterations_str != null) {
-                main_loop_iterations = Long.parseLong(main_loop_iterations_str);
-            }
-            Path resultFolder = ConfuzzionMain.parseDirectory(args);
-            ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
-            conf.startGeneration(main_loop_iterations);
-        } else {
-            ConfuzzionMain.printHelp();
-        }
-    }
-
-    private static Path parseDirectory(String[] args) {
-        String folderOption = ConfuzzionMain.parseOption(args, "-o");
-        Path resultFolder = null;
-
-        if (folderOption == null) {
-            resultFolder = Paths.get("confuzzionResults/");
-        } else {
-            resultFolder = Paths.get(folderOption);
-        }
-
-        if (!Files.exists(resultFolder)) {
-            try {
+            if (!Files.exists(resultFolder)) {
                 Files.createDirectories(resultFolder);
-            } catch(IOException e) {
-                logger.error(
-                        "Error while creating result directory.\n" +
-                        "Check permissions and path: {}", resultFolder, e);
             }
+        } catch (ParseException e) {
+            logger.error("Options parsing failed", e);
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("confuzzion", options);
+            System.exit(1);
+        } catch (IOException e) {
+            logger.error("Error", e);
+            System.exit(1);
         }
 
-        return resultFolder;
+        ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
+
+        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome);
     }
 
-    private static String parseOption(String[] args, String option) {
-        for (int i = 1; i < args.length - 1; i++) {
-            if (args[i].equals(option)) {
-                i++;
-                return args[i];
-            }
-        }
+    private static Options configParameters() {
+        final Option outputOption = Option.builder("o")
+                .longOpt("output")
+                .desc("Output directory")
+                .hasArg(true)
+                .argName("output")
+                .required(false)
+                .build();
 
-        return null;
-    }
+        final Option iterationsOption = Option.builder("i")
+                .longOpt("iterations")
+                .desc("Main loop iterations / -1 by default")
+                .hasArg(true)
+                .argName("iterations")
+                .required(false)
+                .build();
 
-    private static void printHelp() {
-        System.err.println(
-            "Usage: mut [-o directory] [-m MAIN_LOOP_ITERATIONS] [-c CONST_LOOP_ITERATIONS] [-t TIMEOUT_PER_PROGRAM] [-r RUNNER] [-j TARGET_JAVA_HOME] [-l STACK_LIMIT]\n" +
-            "       gen [-m MAIN_LOOP_ITERATIONS]\n" +
-            "RUNNER : thread or jvm"
-        );
+        final Option timeoutOption = Option.builder("t")
+                .longOpt("timeout")
+                .desc("Timeout per program execution / 1000 ms by default")
+                .hasArg(true)
+                .argName("timeout")
+                .required(false)
+                .build();
+
+        final Option runnerOption = Option.builder("threads")
+                .longOpt("threads")
+                .desc("Use threads in spite of JVM to run programs")
+                .hasArg(false)
+                .required(false)
+                .build();
+
+        final Option jvmOption = Option.builder("j")
+                .longOpt("jvm")
+                .desc("JAVA_HOME for execution / same as running JAVA_HOME by default")
+                .hasArg(true)
+                .argName("jvm")
+                .required(false)
+                .build();
+
+        final Option stackLimitOption = Option.builder("l")
+                .longOpt("stack-limit")
+                .desc("Mutations stack size limit / default no limit")
+                .hasArg(true)
+                .argName("stacklimit")
+                .required(false)
+                .build();
+
+        final Option helpOption = Option.builder("h")
+                .longOpt("help")
+                .desc("Print this message")
+                .hasArg(false)
+                .required(false)
+                .build();
+
+        final Options options = new Options();
+
+        options.addOption(outputOption);
+        options.addOption(iterationsOption);
+        options.addOption(timeoutOption);
+        options.addOption(runnerOption);
+        options.addOption(jvmOption);
+        options.addOption(stackLimitOption);
+        options.addOption(helpOption);
+
+        return options;
     }
 
     public void startGeneration(long mainloop_turn) {
@@ -132,7 +165,7 @@ public class ConfuzzionMain {
         for (long loop1 = 0; loop1 < mainloop_turn; loop1++) {
             logger.info("===Loop {}===", loop1);
             generator.generate("java.lang.Object");
-            Mutant mutant = generator.addContractsChecks(contracts);
+            generator.addContractsChecks(contracts);
         }
     }
 
