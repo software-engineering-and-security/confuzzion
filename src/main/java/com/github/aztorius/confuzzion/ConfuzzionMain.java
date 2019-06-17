@@ -16,9 +16,10 @@ import soot.Scene;
 public class ConfuzzionMain {
     private Path resultFolder;
 
-    private static long MAIN_LOOP_ITERATIONS = 1000;
-    private static int TIMEOUT = 1000;
-    private static boolean WITH_JVM = true;
+    private static final long MAIN_LOOP_ITERATIONS = 1000;
+    private static final int TIMEOUT = 1000;
+    private static final int STACK_LIMIT = Integer.MAX_VALUE;
+    private static final boolean WITH_JVM = true;
     private static final Logger logger = LoggerFactory.getLogger(ConfuzzionMain.class);
 
     public ConfuzzionMain(Path resultFolder) {
@@ -31,6 +32,7 @@ public class ConfuzzionMain {
         } else if (args[0].equals("mut")) {
             long main_loop_iterations = ConfuzzionMain.MAIN_LOOP_ITERATIONS;
             int timeout = ConfuzzionMain.TIMEOUT;
+            int stackLimit = ConfuzzionMain.STACK_LIMIT;
             boolean withJVM = ConfuzzionMain.WITH_JVM;
             String javahome = System.getProperty("java.home");
 
@@ -48,6 +50,11 @@ public class ConfuzzionMain {
                 timeout = Integer.parseInt(timeout_str);
             }
 
+            String stack_limit_str = ConfuzzionMain.parseOption(args, "-l");
+            if (stack_limit_str != null) {
+                stackLimit = Integer.parseInt(stack_limit_str);
+            }
+
             String withjvm_str = ConfuzzionMain.parseOption(args, "-r");
             if (withjvm_str != null) {
                 withJVM = !withjvm_str.equalsIgnoreCase("thread");
@@ -58,7 +65,7 @@ public class ConfuzzionMain {
                 javahome = javahome_str;
             }
 
-            conf.startMutation(main_loop_iterations, timeout, withJVM, javahome);
+            conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome);
         } else if (args[0].equals("gen")) {
             long main_loop_iterations = 10;
             String main_loop_iterations_str =
@@ -110,7 +117,7 @@ public class ConfuzzionMain {
 
     private static void printHelp() {
         System.err.println(
-            "Usage: mut [-o directory] [-m MAIN_LOOP_ITERATIONS] [-c CONST_LOOP_ITERATIONS] [-t TIMEOUT_PER_PROGRAM] [-r RUNNER] [-j TARGET_JAVA_HOME]\n" +
+            "Usage: mut [-o directory] [-m MAIN_LOOP_ITERATIONS] [-c CONST_LOOP_ITERATIONS] [-t TIMEOUT_PER_PROGRAM] [-r RUNNER] [-j TARGET_JAVA_HOME] [-l STACK_LIMIT]\n" +
             "       gen [-m MAIN_LOOP_ITERATIONS]\n" +
             "RUNNER : thread or jvm"
         );
@@ -129,7 +136,7 @@ public class ConfuzzionMain {
         }
     }
 
-    public void startMutation(long mainloop_turn, int timeout, boolean withJVM, String javahome) {
+    public void startMutation(long mainloop_turn, int timeout, int stackLimit, boolean withJVM, String javahome) {
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
         logger.info("Soot Class Path: {}", Scene.v().getSootClassPath());
@@ -234,7 +241,7 @@ public class ConfuzzionMain {
                 }
             }
 
-            if (statusScreen.isStalled() && mutationsStack.size() > 0) {
+            if ((statusScreen.isStalled() && mutationsStack.size() > 0) || mutationsStack.size() >= stackLimit) {
                 // Revert a random number of mutations
                 int toRevert = rand.nextUint(mutationsStack.size());
                 while(toRevert-- > 0) {
