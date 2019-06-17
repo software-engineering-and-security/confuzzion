@@ -24,7 +24,7 @@ public class AddMethodMutation extends ClassMutation {
                 "method" + rand.nextIncrement(),
                 rand.randTypes(sootClass.getName(), AddMethodMutation.MAX_PARAMETERS),
                 rand.randType(sootClass.getName(), true),
-                rand.randModifiers(true));
+                rand.randModifiers(true, false));
     }
 
     public AddMethodMutation(RandomGenerator rand, SootClass sootClass, String name,
@@ -94,7 +94,7 @@ public class AddMethodMutation extends ClassMutation {
     }
 
     public AddMethodMutation(RandomGenerator rand, SootClass sootClass, SootMethod superMethod) throws MutationException {
-        this(rand, sootClass, superMethod.getName(), superMethod.getParameterTypes(), superMethod.getReturnType(), rand.randModifiers(true));
+        this(rand, sootClass, superMethod.getName(), superMethod.getParameterTypes(), superMethod.getReturnType(), rand.randModifiers(true, false));
     }
 
     @Override

@@ -317,13 +317,18 @@ public class RandomGenerator {
     /**
      * Randomly choose modifiers
      * @param  canBeStatic if true result may have the static modifier
+     * @param  canBeVolatile if true result may have the volatile modifier
      * @return             random modifiers
      */
-    public int randModifiers(Boolean canBeStatic) {
+    public int randModifiers(Boolean canBeStatic, Boolean canBeVolatile) {
         int modifiers = 0;
 
-        if (rand.nextBoolean() && canBeStatic) {
+        if (canBeStatic && rand.nextBoolean()) {
             modifiers |= Modifier.STATIC;
+        }
+
+        if (canBeVolatile && rand.nextBoolean()) {
+            modifiers |= Modifier.VOLATILE;
         }
 
         if (rand.nextBoolean()) {

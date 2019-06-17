@@ -279,7 +279,7 @@ public class MutantGenerator {
         }
 
         Type returnType = rand.randType(sClass.getName(), true);
-        int modifiers = rand.randModifiers(true);
+        int modifiers = rand.randModifiers(true, false);
 
         this.addMethod(name, parameterTypes, returnType, modifiers, true);
     }
@@ -661,7 +661,7 @@ public class MutantGenerator {
             SootClass clazz = Util.getOrLoadSootClass(rand.getClassName());
             type = clazz.getType();
         }
-        int modifiers = rand.randModifiers(true);
+        int modifiers = rand.randModifiers(true, true);
         mutant.getSootClass().addField(new SootField(name, type, modifiers));
     }
 
