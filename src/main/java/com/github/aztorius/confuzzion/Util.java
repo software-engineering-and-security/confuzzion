@@ -69,8 +69,8 @@ public class Util {
         outputStream.close();
     }
 
-    public static void startJVM(String classpath, String className, int timeoutMiliseconds) throws Exception {
-        String path = Paths.get(System.getProperty("java.home"), "bin", "java").toString();
+    public static void startJVM(String javahome, String classpath, String className, int timeoutMiliseconds) throws Exception {
+        String path = Paths.get(javahome, "bin", "java").toString();
         ProcessBuilder processBuilder = new ProcessBuilder(path, "-cp", classpath + ":" + Util.getJarPath(), className);
         logger.info("{}", processBuilder.command());
         processBuilder.redirectOutput(new File(Paths.get(classpath, "stdout.txt").toString()));

@@ -32,6 +32,7 @@ public class ConfuzzionMain {
             long main_loop_iterations = ConfuzzionMain.MAIN_LOOP_ITERATIONS;
             int timeout = ConfuzzionMain.TIMEOUT;
             boolean withJVM = ConfuzzionMain.WITH_JVM;
+            String javahome = System.getProperty("java.home");
 
             String main_loop_iterations_str =
                 ConfuzzionMain.parseOption(args, "-m");
@@ -52,7 +53,12 @@ public class ConfuzzionMain {
                 withJVM = !withjvm_str.equalsIgnoreCase("thread");
             }
 
-            conf.startMutation(main_loop_iterations, timeout, withJVM);
+            String javahome_str = ConfuzzionMain.parseOption(args, "-j");
+            if (javahome_str != null) {
+                javahome = javahome_str;
+            }
+
+            conf.startMutation(main_loop_iterations, timeout, withJVM, javahome);
         } else if (args[0].equals("gen")) {
             long main_loop_iterations = 10;
             String main_loop_iterations_str =
@@ -104,7 +110,7 @@ public class ConfuzzionMain {
 
     private static void printHelp() {
         System.err.println(
-            "Usage: mut [-o directory] [-m MAIN_LOOP_ITERATIONS] [-c CONST_LOOP_ITERATIONS] [-t TIMEOUT_PER_PROGRAM] [-r RUNNER]\n" +
+            "Usage: mut [-o directory] [-m MAIN_LOOP_ITERATIONS] [-c CONST_LOOP_ITERATIONS] [-t TIMEOUT_PER_PROGRAM] [-r RUNNER] [-j TARGET_JAVA_HOME]\n" +
             "       gen [-m MAIN_LOOP_ITERATIONS]\n" +
             "RUNNER : thread or jvm"
         );
@@ -123,10 +129,12 @@ public class ConfuzzionMain {
         }
     }
 
-    public void startMutation(long mainloop_turn, int timeout, boolean withJVM) {
+    public void startMutation(long mainloop_turn, int timeout, boolean withJVM, String javahome) {
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
         logger.info("Soot Class Path: {}", Scene.v().getSootClassPath());
+        logger.info("Default java.home: {}", System.getProperty("java.home"));
+        logger.info("Target java.home: {}", javahome);
 
         RandomGenerator rand = new RandomGenerator();
         ArrayList<Contract> contracts = new ArrayList<Contract>();
@@ -172,7 +180,7 @@ public class ConfuzzionMain {
                         logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                         break;
                     }
-                    currentProg.genAndLaunchWithJVM(folder.toString(), timeout);
+                    currentProg.genAndLaunchWithJVM(javahome, folder.toString(), timeout);
                 } else { //with threads
                     currentProg.genAndLaunch(timeout);
                 }

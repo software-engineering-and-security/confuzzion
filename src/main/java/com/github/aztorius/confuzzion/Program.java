@@ -319,16 +319,17 @@ public class Program {
 
     /**
      * Generate and launch program within a separate JVM
+     * @param javahome target JVM to launch
      * @param folder
      * @param timeout in milliseconds before killing the JVM
      * @throws Throwable
      */
-    public void genAndLaunchWithJVM(String folder, int timeout) throws Throwable {
+    public void genAndLaunchWithJVM(String javahome, String folder, int timeout) throws Throwable {
         this.saveAsClassFiles(folder);
         MutantGenerator gen = new MutantGenerator(rand, "Main");
         Mutant mut = gen.genMainLoader(mutants);
         mut.toClassFile(folder);
-        Util.startJVM(folder, mut.getClassName(), timeout);
+        Util.startJVM(javahome, folder, mut.getClassName(), timeout);
     }
 
     /**
