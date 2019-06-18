@@ -379,7 +379,7 @@ public class RandomGenerator {
     public Local randLocalRef(Chain<Local> locals) {
         ArrayList<Local> localRefs = new ArrayList<Local>();
         for (Local loc : locals) {
-            if (RefType.class.isInstance(loc.getType())) {
+            if (loc.getType() instanceof RefType) {
                 localRefs.add(loc);
             }
         }
