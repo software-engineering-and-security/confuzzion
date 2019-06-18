@@ -4,6 +4,8 @@ import soot.ArrayType;
 import soot.Body;
 import soot.Local;
 import soot.PrimType;
+import soot.RefType;
+import soot.Scene;
 import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
@@ -12,9 +14,10 @@ import soot.Value;
 import soot.ValueBox;
 import soot.VoidType;
 import soot.jimple.Constant;
+import soot.jimple.IntConstant;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Jimple;
-import soot.util.Chain;
+import soot.jimple.NullConstant;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,20 +70,86 @@ public abstract class MethodMutation extends Mutation {
         }
     }
 
+    /**
+     * Find or build a Value from other locals or accessible fields
+     * @param body
+     * @param type target type of the local
+     * @return NullConstant or an appropriate Value
+     */
+    protected Value getOrGenValue(Body body, Type type) {
+        ArrayList<Local> compatibleLocals = new ArrayList<Local>(5);
+        ArrayList<SootField> compatibleFields = new ArrayList<SootField>(5);
+        ArrayList<Local> correspondingLocals = new ArrayList<Local>(5);
+        for (Local loc : body.getLocals()) {
+            // Same type or sub-type is compatible for assignment
+            if (loc.getType() == type ||
+                    (type instanceof RefType &&
+                            loc.getType() instanceof RefType &&
+                            type.merge(loc.getType(), Scene.v()) == type)) {
+                compatibleLocals.add(loc);
+            }
+            if (loc.getType() instanceof RefType) {
+                SootClass sClass = Util.getOrLoadSootClass(loc.getType().toString());
+                for (SootField field : sClass.getFields()) {
+                    if (sClass == body.getMethod().getDeclaringClass() ||
+                            field.isPublic() ||
+                            field.isProtected()) {
+                        compatibleFields.add(field);
+                        correspondingLocals.add(loc);
+                    }
+                }
+            }
+        }
+
+        Value val = null;
+        if (compatibleLocals.size() > 0 && rand.nextBoolean()) {
+            val = compatibleLocals.get(rand.nextUint(compatibleLocals.size()));
+        } else if (compatibleFields.size() > 0 && rand.nextBoolean()) {
+            int index = rand.nextUint(compatibleFields.size());
+            SootField field = compatibleFields.get(index);
+            Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(), type);
+            mutation.addLocal(loc);
+            if (field.isStatic()) {
+                mutation.addUnit(
+                        Jimple.v().newAssignStmt(loc,
+                                Jimple.v().newStaticFieldRef(field.makeRef())));
+            } else {
+                mutation.addUnit(
+                        Jimple.v().newAssignStmt(loc,
+                                Jimple.v().newInstanceFieldRef(correspondingLocals.get(index),
+                                        field.makeRef())));
+            }
+            val = loc;
+        } else {
+            // Create a new Value of the appropriate type
+            if (type instanceof PrimType) {
+                val = rand.randConstant(type);
+            } else if (type instanceof ArrayType) {
+                val = this.genArray(body, type);
+            } else {
+                // Call this method to create another object
+                val = this.genObject(body, type.toString());
+            }
+        }
+        if (val == null) {
+            // If type cannot be found or generated use a proper null value.
+            val = NullConstant.v();
+        }
+        return val;
+    }
+
     protected Local genArray(Body body, Type type) {
         ArrayType arrayType = (ArrayType)type;
         Type baseType = arrayType.baseType;
         Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(), type);
         mutation.addLocal(loc);
-        Value arraySize = soot.jimple.IntConstant.v(rand.nextUint(100) + 1);
+        Value arraySize = IntConstant.v(rand.nextUint(100) + 1);
         mutation.addUnit(Jimple.v().newAssignStmt(loc,
-            Jimple.v().newNewArrayExpr(baseType, arraySize)));
+                Jimple.v().newNewArrayExpr(baseType, arraySize)));
         return loc;
     }
 
     protected Local genObject(Body body, String strObj) {
-        Chain<Local> locals = body.getLocals();
-
         SootClass clazz = Util.getOrLoadSootClass(strObj);
         if (!clazz.isPublic()) {
             return null;
@@ -170,44 +239,12 @@ public abstract class MethodMutation extends Mutation {
             constructors.get(rand.nextUint(constructors.size()));
         List<Type> parameterTypes = constructor.getParameterTypes();
         ArrayList<Value> parameters = new ArrayList<Value>(parameterTypes.size());
-        Boolean found = false;
 
         // Find or generate parameters
         for (Type param : parameterTypes) {
-            found = false;
             // Find a local that can meet this type
-            for (Local loc : locals) {
-                if (loc.getType() == param) {
-                    parameters.add(loc);
-                    found = true;
-                    break;
-                }
-            }
-            if (found) {
-                continue;
-            }
-
-            // Create a primitive typed local with a constant
-            if (PrimType.class.isInstance(param)) {
-                Local loc =
-                    Jimple.v().newLocal("local" + rand.nextIncrement(), param);
-                mutation.addLocal(loc);
-                mutation.addUnit(
-                    Jimple.v().newAssignStmt(loc, rand.randConstant(param)));
-                parameters.add(loc);
-                continue;
-            } else if (ArrayType.class.isInstance(param)) {
-                parameters.add(this.genArray(body, param));
-                continue;
-            }
-
-            // Call this method to create another object
-            Value loc = this.genObject(body, param.toString());
-            if (loc == null) {
-                // If a parameter cannot be built use a null value.
-                loc = soot.jimple.NullConstant.v();
-            }
-            parameters.add(loc);
+            Value value = this.getOrGenValue(body, param);
+            parameters.add(value);
         }
 
         Local loc = null;
@@ -255,39 +292,8 @@ public abstract class MethodMutation extends Mutation {
         // Generate parameters
         List<Type> parameterTypes = method.getParameterTypes();
         ArrayList<Value> parameters = new ArrayList<Value>();
-        Boolean found = false;
         for (Type paramType : parameterTypes) {
-            for (Local loc : body.getLocals()) {
-                if (loc.getType() == paramType) {
-                    found = true;
-                    parameters.add(loc);
-                    break;
-                }
-            }
-            if (found) {
-                found = false;
-                continue;
-            }
-            Value locParam = null;
-            if (soot.PrimType.class.isInstance(paramType)) {
-                // paramType is a Primitive Type
-                locParam = rand.randConstant(paramType);
-            } else if (soot.ArrayType.class.isInstance(paramType)) {
-                // paramType is an Array Type
-                locParam = this.genArray(body, paramType);
-                if (locParam == null) {
-                    // Cannot build the array
-                    return;
-                }
-            } else {
-                locParam = this.genObject(body, paramType.toString());
-                if (locParam == null) {
-                    // May happen if building the object is
-                    // too difficult. Use null.
-                    locParam = soot.jimple.NullConstant.v();
-                }
-            }
-            parameters.add(locParam);
+            parameters.add(this.getOrGenValue(body, paramType));
         }
 
         InvokeExpr methodCallExpr = null;
