@@ -8,11 +8,15 @@ import soot.util.JasminOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class Mutant corresponds to a SootClass with some methods to build the
@@ -21,6 +25,8 @@ import java.nio.file.Paths;
 public class Mutant {
     private String className;
     private SootClass sClass;
+
+    private static final Logger logger = LoggerFactory.getLogger(Mutant.class);
 
     /**
      * Constructor
@@ -48,7 +54,7 @@ public class Mutant {
      * @return        filepath
      */
     public String toClassFile(String folder) {
-        String fileName = Paths.get(folder, sClass.getShortName()).toString() + ".class";
+        String fileName = Paths.get(folder, sClass.getShortName() + ".class").toString();
         try {
             OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
@@ -56,8 +62,8 @@ public class Mutant {
             jasminClass.print(writerOut);
             writerOut.flush();
             streamOut.close();
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            logger.error("Writing file {}", fileName, e);
         }
         return fileName;
     }
@@ -78,8 +84,8 @@ public class Mutant {
         byte[] classContent = stream.toByteArray();
         try {
             streamOut.close();
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            logger.error("Converting to class bytecode in memory", e);
             return null;
         }
         return classContent;
@@ -91,15 +97,15 @@ public class Mutant {
      * @return        filepath
      */
     public String toJimpleFile(String folder) {
-        String fileName = Paths.get(folder, sClass.getShortName()).toString() + ".jimple";
+        String fileName = Paths.get(folder, sClass.getShortName() + ".jimple").toString();
         try {
             OutputStream streamOut = new FileOutputStream(fileName);
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
             Printer.v().printTo(sClass, writerOut);
             writerOut.flush();
             streamOut.close();
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            logger.error("Writing file {}", fileName, e);
         }
         return fileName;
     }
