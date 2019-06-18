@@ -112,26 +112,15 @@ public class Program {
     public ArrayList<BodyMutation> addContractsChecks(
             ArrayList<Contract> contracts,
             Mutation mutation) {
-        Body body = null;
         ArrayList<BodyMutation> mutations =
             new ArrayList<BodyMutation>(contracts.size());
 
-        if (mutation instanceof MethodMutation) {
-            // Get the body and put checks at the end
-            MethodMutation mMutation = (MethodMutation)mutation;
-            body = mMutation.getBody();
-        } else if (mutation instanceof ClassMutation) {
-            // TODO: put checks inside constructors
-            return mutations; //TODO: remove
-        } else if (mutation instanceof ProgramMutation) {
-            return mutations;
-        } else {
-            throw new IllegalArgumentException("mutation is unknown");
-        }
-
         for (Contract contract : contracts) {
-            // Apply contract check on the body
-            mutations.add(contract.applyCheck(body));
+            // Apply contract check
+            BodyMutation bodyMutation = this.addContractCheck(contract, mutation);
+            if (bodyMutation != null) {
+                mutations.add(bodyMutation);
+            }
         }
 
         return mutations;
