@@ -1,5 +1,7 @@
 package com.github.aztorius.confuzzion;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.cli.CommandLine;
@@ -36,27 +38,53 @@ public class Repro {
 
             input = line.getOptionValue("i");
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            String folder = Paths.get(input).getParent().toAbsolutePath().normalize().toString();
+            Path path = Paths.get(input).getParent().toAbsolutePath().normalize();
+            String folder = path.toString();
 
             // Init Soot
             Scene.v().loadBasicClasses();
             Scene.v().extendSootClassPath(folder);
+            Scene.v().extendSootClassPath(Util.getJarPath());
             logger.info("Soot Classpath: {}", Scene.v().getSootClassPath());
+            logger.info("java.home: {}", System.getProperty("java.home"));
+
+            String classname = Paths.get(input).getFileName().toString();
+            // Load all classes (.jimple/.class) except classname inside folder
+            File folderFile = new File(folder);
+            File[] listFiles = folderFile.listFiles();
+            for (int i = listFiles.length - 1; i >= 0; i--) {
+                File fileEntry = listFiles[i];
+                if (fileEntry.isFile() && !fileEntry.getName().equals(classname)) {
+                    String filename = fileEntry.getName();
+
+                    if (filename.endsWith(".jimple")) {
+                        filename = filename.substring(0, filename.lastIndexOf(".jimple"));
+                    } else if (filename.endsWith(".class")) {
+                        filename = filename.substring(0, filename.lastIndexOf(".jimple"));
+                    } else {
+                        continue;
+                    }
+                    Mutant mut = Repro.loadClassInSoot(filename);
+                    Repro.loadClass(mut, loader);
+                }
+            }
 
             if (input.endsWith("jimple")) {
-                String classname = Paths.get(input).getFileName().toString();
                 classname = classname.substring(0, classname.lastIndexOf(".jimple"));
-                Mutant mut = Repro.loadClass(classname);
-                Repro.launchClass(mut, loader);
+
+                Mutant mut = Repro.loadClassInSoot(classname);
+                Class<?> clazz = Repro.loadClass(mut, loader);
+                Repro.launchClass(clazz);
 
                 if (line.hasOption("s")) {
                     mut.toClassFile(folder);
                 }
             } else if (input.endsWith("class")) {
-                String classname = Paths.get(input).getFileName().toString();
                 classname = classname.substring(0, classname.lastIndexOf(".class"));
-                Mutant mut = Repro.loadClass(classname);
-                Repro.launchClass(mut, loader);
+
+                Mutant mut = Repro.loadClassInSoot(classname);
+                Class<?> clazz = Repro.loadClass(mut, loader);
+                Repro.launchClass(clazz);
 
                 if (line.hasOption("s")) {
                     mut.toJimpleFile(folder);
@@ -70,7 +98,7 @@ public class Repro {
         }
     }
 
-    private static Mutant loadClass(String classname) {
+    private static Mutant loadClassInSoot(String classname) {
         SootClass sClass = Scene.v().loadClassAndSupport(classname);
         sClass.setApplicationClass();
         for (SootMethod m : sClass.getMethods()) {
@@ -90,12 +118,20 @@ public class Repro {
         return new Mutant(sClass);
     }
 
-    private static void launchClass(Mutant mut, ClassLoader loader) {
+    private static Class<?> loadClass(Mutant mut, ClassLoader loader) {
         byte[] classContent = mut.toClass();
         ByteClassLoader subLoader = new ByteClassLoader(loader);
-        Class<?> clazz;
+        Class<?> clazz = null;
         try {
             clazz = subLoader.load(mut.getClassName(), classContent);
+        } catch (Throwable e) {
+            logger.error("Error loading class {}", mut.getClassName(), e);
+        }
+        return clazz;
+    }
+
+    private static void launchClass(Class<?> clazz) {
+        try {
             clazz.newInstance();
         } catch (Throwable e) {
             logger.error("Error loading and creating a new instance", e);
