@@ -74,13 +74,13 @@ public class AddMethodMutation extends ClassMutation {
                     // Add method to class. Necessary for AddLocalMutation
                     sootClass.addMethod(addedMethod);
                     addedMutation = new AddLocalMutation(rand, addedMethod, returnType);
+                    // Remove temporary method
+                    sootClass.removeMethod(addedMethod);
                     val = addedMutation.getAddedLocal();
                     if (val == null) {
                         throw new MutationException(AddMethodMutation.class,
                             "Cannot build object of type " + returnType);
                     }
-                    // Remove temporary method.
-                    sootClass.removeMethod(addedMethod);
                     // Remove temporary return
                     body.getUnits().removeLast();
                 }
