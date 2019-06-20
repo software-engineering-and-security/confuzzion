@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# Usage: repro.sh ./path/to/class/TestX.class
+# Usage: repro.sh ./path/to/java -i input_file [-s]
 
-LOCAL_PATH=$(dirname $1)
-LOCAL_FILENAME=$(basename $1)
-LOCAL_CLASSNAME=$(basename $LOCAL_FILENAME .class)
+LOCAL_JAVA=$1
 
-java -cp target/confuzzion-1.0-SNAPSHOT-jar-with-dependencies.jar:$LOCAL_PATH com.github.aztorius.confuzzion.Repro $LOCAL_CLASSNAME
+cd "$(dirname "$0")"
+
+$LOCAL_JAVA -cp target/confuzzion-1.0-SNAPSHOT-jar-with-dependencies.jar com.github.aztorius.confuzzion.Repro $@
