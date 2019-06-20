@@ -36,6 +36,11 @@ public class Mutant {
         this.className = className;
     }
 
+    public Mutant(SootClass sClass) {
+        this.className = sClass.getShortName();
+        this.sClass = sClass;
+    }
+
     public String getClassName() {
         return className;
     }
