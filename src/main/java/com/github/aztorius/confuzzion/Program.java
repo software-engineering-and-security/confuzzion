@@ -93,11 +93,15 @@ public class Program {
     }
 
     public Mutant genNewClass() {
-        MutantGenerator generator = new MutantGenerator(rand, classBaseName + mutants.size());
-        String superClass = rand.randClassName(classBaseName + mutants.size());
+        String className = classBaseName + mutants.size();
+        MutantGenerator generator = new MutantGenerator(rand, className);
+        rand.addStrMutant(className);
+        String superClass = rand.randClassName(className);
+        if (rand.nextBoolean()) {
+            superClass = "java.lang.Object";
+        }
         Mutant addedMutant = generator.genEmptyClass(superClass);
         this.mutants.add(addedMutant);
-        this.rand.addStrMutant(addedMutant.getClassName());
         return addedMutant;
     }
 
