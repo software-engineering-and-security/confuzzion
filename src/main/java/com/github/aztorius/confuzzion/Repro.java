@@ -57,42 +57,38 @@ public class Repro {
                 if (fileEntry.isFile() && !fileEntry.getName().equals(classname)) {
                     String filename = fileEntry.getName();
 
-                    if (filename.endsWith(".jimple")) {
-                        filename = filename.substring(0, filename.lastIndexOf(".jimple"));
-                    } else if (filename.endsWith(".class")) {
-                        filename = filename.substring(0, filename.lastIndexOf(".class"));
+                    if (filename.endsWith(".jimple") || filename.endsWith(".class")) {
+                        filename = filename.substring(0, filename.lastIndexOf("."));
                     } else {
                         continue;
                     }
                     logger.info("Loading class {}", filename);
                     Mutant mut = Repro.loadClassInSoot(filename);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(mut.toString());
+                    }
                     Repro.loadClass(mut, loader);
                 }
             }
 
-            if (input.endsWith("jimple")) {
-                classname = classname.substring(0, classname.lastIndexOf(".jimple"));
-
-                Mutant mut = Repro.loadClassInSoot(classname);
-                Class<?> clazz = Repro.loadClass(mut, loader);
-                Repro.launchClass(clazz);
-
-                if (line.hasOption("s")) {
-                    mut.toClassFile(folder);
-                }
-            } else if (input.endsWith("class")) {
-                classname = classname.substring(0, classname.lastIndexOf(".class"));
-
-                Mutant mut = Repro.loadClassInSoot(classname);
-                Class<?> clazz = Repro.loadClass(mut, loader);
-                Repro.launchClass(clazz);
-
-                if (line.hasOption("s")) {
-                    mut.toJimpleFile(folder);
-                }
-            } else {
+            if (!(input.endsWith(".jimple") || input.endsWith(".class"))) {
                 Repro.printHelp(options);
             }
+            classname = classname.substring(0, classname.lastIndexOf("."));
+
+            Mutant mut = Repro.loadClassInSoot(classname);
+            if (logger.isDebugEnabled()) {
+                logger.debug(mut.toString());
+            }
+            if (line.hasOption("s")) {
+                if (input.endsWith(".jimple")) {
+                    mut.toClassFile(folder);
+                } else if (input.endsWith(".class")) {
+                    mut.toJimpleFile(folder);
+                }
+            }
+            Class<?> clazz = Repro.loadClass(mut, loader);
+            Repro.launchClass(clazz);
         } catch (ParseException e) {
             logger.error("Options parsing failed", e);
             Repro.printHelp(options);
