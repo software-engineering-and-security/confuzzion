@@ -37,7 +37,7 @@ public class Repro {
             }
 
             input = line.getOptionValue("i");
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            ByteClassLoader loader = new ByteClassLoader(Thread.currentThread().getContextClassLoader());
             Path path = Paths.get(input).getParent().toAbsolutePath().normalize();
             String folder = path.toString();
 
@@ -60,10 +60,11 @@ public class Repro {
                     if (filename.endsWith(".jimple")) {
                         filename = filename.substring(0, filename.lastIndexOf(".jimple"));
                     } else if (filename.endsWith(".class")) {
-                        filename = filename.substring(0, filename.lastIndexOf(".jimple"));
+                        filename = filename.substring(0, filename.lastIndexOf(".class"));
                     } else {
                         continue;
                     }
+                    logger.info("Loading class {}", filename);
                     Mutant mut = Repro.loadClassInSoot(filename);
                     Repro.loadClass(mut, loader);
                 }
@@ -118,12 +119,11 @@ public class Repro {
         return new Mutant(sClass);
     }
 
-    private static Class<?> loadClass(Mutant mut, ClassLoader loader) {
+    private static Class<?> loadClass(Mutant mut, ByteClassLoader loader) {
         byte[] classContent = mut.toClass();
-        ByteClassLoader subLoader = new ByteClassLoader(loader);
         Class<?> clazz = null;
         try {
-            clazz = subLoader.load(mut.getClassName(), classContent);
+            clazz = loader.load(mut.getClassName(), classContent);
         } catch (Throwable e) {
             logger.error("Error loading class {}", mut.getClassName(), e);
         }
@@ -134,7 +134,7 @@ public class Repro {
         try {
             clazz.newInstance();
         } catch (Throwable e) {
-            logger.error("Error loading and creating a new instance", e);
+            logger.error("Error newInstance {}", clazz.getSimpleName(), e);
         }
     }
 
