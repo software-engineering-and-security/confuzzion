@@ -211,6 +211,7 @@ public class ConfuzzionMain {
             Path folder = Paths.get(
                     resultFolder.toAbsolutePath().toString(),
                     mutation.getClass().getSimpleName() + "-" + loop1);
+            Boolean keepFolder = false;
             try {
                 // Instantiation and launch
                 if (withJVM) {
@@ -234,18 +235,9 @@ public class ConfuzzionMain {
                 logger.warn("Exception while executing program", e);
                 Throwable cause = Util.getCause(e);
                 if (ContractCheckException.class.isInstance(cause)) {
-                    // Save current classes to unique folder
-                    Path folder2 = Paths.get(
-                            resultFolder.toAbsolutePath().toString(),
-                            mutation.getClass().getSimpleName() + "-" + loop1 + "-ContractCheckException");
-                    try {
-                        Files.createDirectories(folder2);
-                    } catch(IOException e2) {
-                        logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
-                        break;
-                    }
-                    currentProg.saveAsClassFiles(folder2.toString());
-                    currentProg.saveAsJimpleFiles(folder2.toString());
+                    keepFolder = true;
+                    // Save current classes also as jimple files
+                    currentProg.saveAsJimpleFiles(folder.toString());
                     // Update status screen
                     statusScreen.newMutation(mutation.getClass(),
                         Status.VIOLATES, 2);
@@ -263,7 +255,7 @@ public class ConfuzzionMain {
                 // Bad sample, revert mutation
                 mutation.undo();
             } finally {
-                if (withJVM) {
+                if (withJVM && !keepFolder) {
                     // Remove folder
                     try {
                         Util.deleteDirectory(folder);
