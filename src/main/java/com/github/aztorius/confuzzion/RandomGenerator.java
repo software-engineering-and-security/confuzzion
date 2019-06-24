@@ -199,7 +199,8 @@ public class RandomGenerator {
 
     public Value randClassConstant(String className) {
         String classString = this.randClassName(className);
-        return ClassConstant.v(classString.replace(".", "/"));
+        SootClass sClass = Util.getOrLoadSootClass(classString);
+        return ClassConstant.fromType(sClass.getType());
     }
 
     /**
