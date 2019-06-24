@@ -91,11 +91,18 @@ public abstract class MethodMutation extends Mutation {
             if (loc.getType() instanceof RefType) {
                 SootClass sClass = Util.getOrLoadSootClass(loc.getType().toString());
                 for (SootField field : sClass.getFields()) {
+                    // Is field accessible ?
                     if (sClass == body.getMethod().getDeclaringClass() ||
                             field.isPublic() ||
                             field.isProtected()) {
-                        compatibleFields.add(field);
-                        correspondingLocals.add(loc);
+                        // Is field compatible ?
+                        if (field.getType() == type ||
+                                (type instanceof RefType &&
+                                        field.getType() instanceof RefType &&
+                                        type.merge(field.getType(), Scene.v()) == type)) {
+                            compatibleFields.add(field);
+                            correspondingLocals.add(loc);
+                        }
                     }
                 }
             }
