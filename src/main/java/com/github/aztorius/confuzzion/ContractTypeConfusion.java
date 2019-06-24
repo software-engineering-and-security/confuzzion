@@ -27,7 +27,7 @@ public class ContractTypeConfusion implements Contract {
         SootClass exception = Util.getOrLoadSootClass("com.github.aztorius.confuzzion.ContractCheckException");
         SootMethod mExceptionInit = exception.getMethodByName("<init>");
         int a = 0;
-        ArrayList<Local> newLocals = new ArrayList<Local>();
+        ArrayList<Local> newLocals = new ArrayList<Local>(10);
         ArrayList<Value> values = new ArrayList<Value>(10);
 
         for (Local local : body.getLocals()) {
