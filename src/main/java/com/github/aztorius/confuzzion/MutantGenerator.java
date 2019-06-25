@@ -26,8 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MutantGenerator {
-    private Mutant mutant;
     private RandomGenerator rand;
+    private SootClass sClass;
     private int counter;
 
     private static int MAX_FIELDS = 20;
@@ -38,22 +38,23 @@ public class MutantGenerator {
 
     public MutantGenerator(RandomGenerator rand, String className) {
         this.rand = rand;
-        mutant = new Mutant(null);
         counter = 0;
+        sClass = new SootClass(className, Modifier.PUBLIC);
+        Scene.v().addClass(sClass);
     }
 
     public Mutant genMainLoader(List<Mutant> mutants) {
         //Class
-        this.genClass("java.lang.Object");
+        this.setSuperClass("java.lang.Object");
         //Constructor
         this.genConstructor("java.lang.Object");
-        SootMethod constructor = mutant.getSootClass().getMethodByName("<init>");
+        SootMethod constructor = sClass.getMethodByName("<init>");
         //Main
         SootMethod main = this.genMain();
         //Add call to Main constructor
         UnitPatchingChain mainUnits = main.getActiveBody().getUnits();
         Chain<Local> mainLocals = main.getActiveBody().getLocals();
-        RefType mainType = mutant.getSootClass().getType();
+        RefType mainType = sClass.getType();
         Local mainlocal = Jimple.v().newLocal("mainlocal", mainType);
         mainLocals.add(mainlocal);
         mainUnits.insertBefore(Jimple.v().newAssignStmt(mainlocal, Jimple.v().newNewExpr(mainType)), mainUnits.getLast());
@@ -92,23 +93,27 @@ public class MutantGenerator {
         consUnits.insertBefore(Jimple.v().newInvokeStmt(Jimple.v().newVirtualInvokeExpr(runtimeLocal, runtimeClass.getMethodByName("exit").makeRef(), soot.jimple.IntConstant.v(Util.ERRORCODE_VIOLATION))), consUnits.getLast());
         // Declare new try-catch
         constructor.getActiveBody().getTraps().add(Jimple.v().newTrap(contractExceptionClass, beginStmt, endStmt, handlerStmt));
-        return this.mutant;
+        return new Mutant(sClass);
+    }
+
+    public void setSuperClass(String superClass) {
+        sClass.setSuperclass(Util.getOrLoadSootClass(superClass));
     }
 
     public Mutant genEmptyClass(String superClass) {
         //Class
-        this.genClass(superClass);
+        this.setSuperClass(superClass);
         //Constructors
         this.genConstructor(superClass);
         //Override methods
         this.genOverrideMethods(false);
 
-        return this.mutant;
+        return new Mutant(sClass);
     }
 
     public Mutant generate(String superClass) {
         //Class
-        this.genClass(superClass);
+        this.setSuperClass(superClass);
         //Fields
         this.genFields();
         //Methods
@@ -118,7 +123,7 @@ public class MutantGenerator {
         //Override methods
         this.genOverrideMethods(true);
 
-        return this.mutant;
+        return new Mutant(sClass);
     }
 
     public Mutant addContractsChecks(ArrayList<Contract> contracts) {
@@ -126,11 +131,11 @@ public class MutantGenerator {
         //As we are a generator we don't need to revert mutations caused
         //by the contract check.
         for (Contract contract : contracts) {
-            for (SootMethod method : mutant.getSootClass().getMethods()) {
+            for (SootMethod method : sClass.getMethods()) {
                 contract.applyCheck(method.getActiveBody());
             }
         }
-        return this.mutant;
+        return new Mutant(sClass);
     }
 
     private int nextInt() {
@@ -138,16 +143,8 @@ public class MutantGenerator {
         return counter;
     }
 
-    private void genClass(String superClass) {
-        SootClass sClass = new SootClass(mutant.getClassName(), Modifier.PUBLIC);
-        sClass.setSuperclass(Util.getOrLoadSootClass(superClass));
-        Scene.v().addClass(sClass);
-        mutant.setSootClass(sClass);
-    }
-
     private void genConstructor(String superClass) {
         //Add constructor <init>
-        SootClass sClass = mutant.getSootClass();
         String name = "<init>";
         ArrayList<Type> parameterTypes = new ArrayList<Type>();
         Type returnType = VoidType.v();
@@ -243,7 +240,6 @@ public class MutantGenerator {
     }
 
     private void genOverrideMethods(boolean genStatements) {
-        SootClass sClass = mutant.getSootClass();
         SootClass superClass = sClass.getSuperclass();
         for (SootMethod method : superClass.getMethods()) {
             if (method.isAbstract() && !method.isConstructor()) {
@@ -270,7 +266,6 @@ public class MutantGenerator {
     }
 
     private void genMethod() {
-        SootClass sClass = mutant.getSootClass();
         String name = "method" + this.nextInt();
         ArrayList<Type> parameterTypes = new ArrayList<Type>();
         int numParams = rand.nextUint(MutantGenerator.MAX_PARAMETERS);
@@ -285,8 +280,6 @@ public class MutantGenerator {
     }
 
     private SootMethod addMethod(String name, List<Type> parameterTypes, Type returnType, int modifiers, boolean genStatements) {
-        SootClass sClass = mutant.getSootClass();
-
         SootMethod method =
             new SootMethod(name,
                            parameterTypes,
@@ -385,7 +378,6 @@ public class MutantGenerator {
                          Boolean genStatements) {
         Chain<Local> locals = body.getLocals();
         UnitPatchingChain units = body.getUnits();
-        SootClass sClass = mutant.getSootClass();
 
         if (!isStatic) {
             //Add "this" local
@@ -662,7 +654,7 @@ public class MutantGenerator {
             type = clazz.getType();
         }
         int modifiers = rand.randModifiers(true, true);
-        mutant.getSootClass().addField(new SootField(name, type, modifiers));
+        sClass.addField(new SootField(name, type, modifiers));
     }
 
     private void genFields() {
