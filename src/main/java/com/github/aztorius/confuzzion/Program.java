@@ -307,15 +307,16 @@ public class Program {
      * Warning: this will not kill threads within a while(true) loop. Use genAndLaunchWithJVM() instead
      * @param timeout in milliseconds before interrupting the Thread
      * @param jasmin_backend use Jasmin backend instead of ASM
+     * @param java_version
      * @throws Throwable can throw any type of Throwable or InterruptedException
      */
-    public void genAndLaunch(int timeout, boolean jasmin_backend) throws Throwable {
+    public void genAndLaunch(int timeout, boolean jasmin_backend, int java_version) throws Throwable {
         ByteClassLoader loader =
                 new ByteClassLoader(Thread.currentThread().getContextClassLoader());
         // Load dependencies
         for (int i = 0; i < startIndex; i++) {
             Mutant mut = mutants.get(i);
-            byte[] array = mut.toClass(jasmin_backend);
+            byte[] array = mut.toClass(jasmin_backend, java_version);
             loader.load(mut.getClassName(), array);
         }
         // Load and instantiate (call <init>) all other mutants
@@ -325,7 +326,7 @@ public class Program {
                 logger.debug("===Class {}{}===", classBaseName, i);
                 logger.debug(mut.toString());
             }
-            byte[] array = mut.toClass(jasmin_backend);
+            byte[] array = mut.toClass(jasmin_backend, java_version);
             Launcher launcher = new Launcher(loader, array, mut.getClassName());
             Thread thread = new Thread(launcher);
             Handler handler = new Handler();
@@ -346,23 +347,26 @@ public class Program {
      * @param folder
      * @param timeout in milliseconds before killing the JVM
      * @param jasmin_backend use Jasmin backend instead of ASM
+     * @param java_version
      * @throws Throwable
      */
-    public void genAndLaunchWithJVM(String javahome, String folder, int timeout, boolean jasmin_backend) throws Throwable {
-        this.saveAsClassFiles(folder, jasmin_backend);
+    public void genAndLaunchWithJVM(String javahome, String folder, int timeout, boolean jasmin_backend, int java_version) throws Throwable {
+        this.saveAsClassFiles(folder, jasmin_backend, java_version);
         MutantGenerator gen = new MutantGenerator(rand, "Main");
         Mutant mut = gen.genMainLoader(mutants.subList(startIndex, mutants.size()));
-        mut.toClassFile(folder, jasmin_backend);
+        mut.toClassFile(folder, jasmin_backend, java_version);
         Util.startJVM(javahome, folder, mut.getClassName(), timeout);
     }
 
     /**
      * Save all classes of this program
      * @param folder destination
+     * @param jasmin_backend use Jasmin backend instead of ASM
+     * @param java_version
      */
-    public void saveAsClassFiles(String folder, boolean jasmin_backend) {
+    public void saveAsClassFiles(String folder, boolean jasmin_backend, int java_version) {
         for (Mutant mut : mutants) {
-            mut.toClassFile(folder, jasmin_backend);
+            mut.toClassFile(folder, jasmin_backend, java_version);
         }
     }
 

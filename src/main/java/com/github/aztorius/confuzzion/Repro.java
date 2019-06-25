@@ -28,6 +28,12 @@ public class Repro {
             CommandLine line = parser.parse(options, args);
 
             boolean jasmin_backend = line.hasOption("jasmin");
+            int java_version = soot.options.Options.java_version_default;
+
+            if (line.hasOption("jversion")) {
+                // soot.options.Options java_version corresponds to java_version + 1
+                java_version = Integer.parseInt(line.getOptionValue("jversion")) + 1;
+            }
 
             if (line.hasOption("h")) {
                 Repro.printHelp(options);
@@ -67,7 +73,7 @@ public class Repro {
                     if (logger.isDebugEnabled()) {
                         logger.debug(mut.toString());
                     }
-                    Repro.loadClass(mut, loader, jasmin_backend);
+                    Repro.loadClass(mut, loader, jasmin_backend, java_version);
                 }
             }
 
@@ -79,12 +85,12 @@ public class Repro {
             }
             if (line.hasOption("s")) {
                 if (input.endsWith(".jimple")) {
-                    mut.toClassFile(folder, jasmin_backend);
+                    mut.toClassFile(folder, jasmin_backend, java_version);
                 } else if (input.endsWith(".class")) {
                     mut.toJimpleFile(folder);
                 }
             }
-            Class<?> clazz = Repro.loadClass(mut, loader, jasmin_backend);
+            Class<?> clazz = Repro.loadClass(mut, loader, jasmin_backend, java_version);
             Repro.launchClass(clazz);
         } catch (ParseException e) {
             logger.error("Options parsing failed", e);
@@ -92,8 +98,8 @@ public class Repro {
         }
     }
 
-    private static Class<?> loadClass(Mutant mut, ByteClassLoader loader, boolean jasmin_backend) {
-        byte[] classContent = mut.toClass(jasmin_backend);
+    private static Class<?> loadClass(Mutant mut, ByteClassLoader loader, boolean jasmin_backend, int java_version) {
+        byte[] classContent = mut.toClass(jasmin_backend, java_version);
         Class<?> clazz = null;
         try {
             clazz = loader.load(mut.getClassName(), classContent);
@@ -113,7 +119,7 @@ public class Repro {
 
     private static void printHelp(Options options) {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("repro", options);
+        formatter.printHelp("Repro [options]", options);
         System.exit(1);
     }
 
@@ -139,6 +145,13 @@ public class Repro {
                 .required(false)
                 .build();
 
+        final Option javaVersionOption = Option.builder("jversion")
+                .desc("Force Java version of output bytecode to : 1-9")
+                .hasArg(true)
+                .argName("java-version")
+                .required(false)
+                .build();
+
         final Option helpOption = Option.builder("h")
                 .longOpt("help")
                 .desc("Print this message")
@@ -151,6 +164,7 @@ public class Repro {
         options.addOption(inputOption);
         options.addOption(saveOption);
         options.addOption(jasminOption);
+        options.addOption(javaVersionOption);
         options.addOption(helpOption);
 
         return options;

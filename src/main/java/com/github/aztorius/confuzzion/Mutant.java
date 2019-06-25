@@ -9,7 +9,6 @@ import soot.baf.BafASMBackend;
 import soot.jimple.AssignStmt;
 import soot.jimple.CastExpr;
 import soot.jimple.JasminClass;
-import soot.options.Options;
 import soot.util.JasminOutputStream;
 
 import java.io.ByteArrayOutputStream;
@@ -59,8 +58,9 @@ public class Mutant {
      * Generate bytecode to an output stream
      * @param stream output
      * @param jasmin_backend use Jasmin backend instead of ASM
+     * @param java_version
      */
-    public void toBytecode(OutputStream stream, boolean jasmin_backend) {
+    public void toBytecode(OutputStream stream, boolean jasmin_backend, int java_version) {
         try {
             logger.info("Using {} backend", jasmin_backend ? "Jasmin" : "ASM");
             if (jasmin_backend) {
@@ -72,7 +72,6 @@ public class Mutant {
                 streamOut.close();
                 writerOut.close();
             } else {
-                int java_version = Options.v().java_version();
                 BafASMBackend backend = new BafASMBackend(sClass, java_version);
                 backend.generateClassFile(stream);
             }
@@ -85,12 +84,13 @@ public class Mutant {
      * Save the SootClass as a .class file
      * @param  folder destination folder that already exists
      * @param  jasmin_backend use Jasmin backend instead of ASM
-     * @return        filepath
+     * @param  java_version
+     * @return filepath
      */
-    public String toClassFile(String folder, boolean jasmin_backend) {
+    public String toClassFile(String folder, boolean jasmin_backend, int java_version) {
         String fileName = Paths.get(folder, sClass.getShortName() + ".class").toString();
         try {
-            this.toBytecode(new FileOutputStream(fileName), jasmin_backend);
+            this.toBytecode(new FileOutputStream(fileName), jasmin_backend, java_version);
         } catch (FileNotFoundException e) {
             logger.error("File {}", fileName, e);
         }
@@ -100,11 +100,12 @@ public class Mutant {
     /**
      * Build the bytecode of the class in memory
      * @param jasmin_backend use Jasmin backend instead of ASM
+     * @param java_version
      * @return bytecode of the class as an array or byte
      */
-    public byte[] toClass(boolean jasmin_backend) {
+    public byte[] toClass(boolean jasmin_backend, int java_version) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        this.toBytecode(stream, jasmin_backend);
+        this.toBytecode(stream, jasmin_backend, java_version);
         byte[] classContent = stream.toByteArray();
         return classContent;
     }

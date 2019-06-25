@@ -48,13 +48,14 @@ public class ConfuzzionMain {
         String javahome = System.getProperty("java.home");
         Path seedFile = null;
         boolean jasmin_backend = ConfuzzionMain.JASMIN_BACKEND;
+        int java_version = soot.options.Options.java_version_default;
 
         try {
             CommandLine line = parser.parse(options, args);
 
             if (line.hasOption("h")) {
                 HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp("confuzzion", options);
+                formatter.printHelp("ConfuzzionMain [options]", options);
                 return;
             }
             if (line.hasOption("o")) {
@@ -76,6 +77,10 @@ public class ConfuzzionMain {
             if (line.hasOption("s")) {
                 seedFile = Paths.get(line.getOptionValue("s"));
             }
+            if (line.hasOption("jversion")) {
+                // soot.options.Options java_version corresponds to java_version + 1
+                java_version = Integer.parseInt(line.getOptionValue("java-version")) + 1;
+            }
             jasmin_backend = line.hasOption("jasmin");
 
             if (!Files.exists(resultFolder)) {
@@ -93,7 +98,7 @@ public class ConfuzzionMain {
 
         ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
 
-        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome, seedFile, jasmin_backend);
+        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome, seedFile, jasmin_backend, java_version);
     }
 
     private static Options configParameters() {
@@ -158,6 +163,13 @@ public class ConfuzzionMain {
                 .required(false)
                 .build();
 
+        final Option javaVersionOption = Option.builder("jversion")
+                .desc("Force Java version of output bytecode to : 1-9")
+                .hasArg(true)
+                .argName("java-version")
+                .required(false)
+                .build();
+
         final Option helpOption = Option.builder("h")
                 .longOpt("help")
                 .desc("Print this message")
@@ -175,6 +187,7 @@ public class ConfuzzionMain {
         options.addOption(stackLimitOption);
         options.addOption(seedOption);
         options.addOption(jasminOption);
+        options.addOption(javaVersionOption);
         options.addOption(helpOption);
 
         return options;
@@ -193,7 +206,7 @@ public class ConfuzzionMain {
         }
     }
 
-    public void startMutation(long mainloop_turn, int timeout, int stackLimit, boolean withJVM, String javahome, Path seedFile, boolean jasmin_backend) {
+    public void startMutation(long mainloop_turn, int timeout, int stackLimit, boolean withJVM, String javahome, Path seedFile, boolean jasmin_backend, int java_version) {
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
         logger.info("Soot Class Path: {}", Scene.v().getSootClassPath());
@@ -289,9 +302,9 @@ public class ConfuzzionMain {
                         logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                         break;
                     }
-                    currentProg.genAndLaunchWithJVM(javahome, folder.toString(), timeout, jasmin_backend);
+                    currentProg.genAndLaunchWithJVM(javahome, folder.toString(), timeout, jasmin_backend, java_version);
                 } else { //with threads
-                    currentProg.genAndLaunch(timeout, jasmin_backend);
+                    currentProg.genAndLaunch(timeout, jasmin_backend, java_version);
                 }
                 // Remove contracts checks for next turn
                 currentProg.removeContractsChecks(contractsMutations);
