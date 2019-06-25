@@ -1,5 +1,6 @@
 package com.github.aztorius.confuzzion;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -208,9 +209,38 @@ public class ConfuzzionMain {
             Scene.v().extendSootClassPath(seedFolder.toString());
             String seedName = seedFile.getFileName().toString();
             seedName = seedName.substring(0, seedName.lastIndexOf("."));
-
             Mutant seedMutant = Mutant.loadClass(seedName);
             currentProg = new Program(rand, seedMutant);
+            if (logger.isDebugEnabled()) {
+                logger.debug(seedMutant.toString());
+            }
+            // Load all classes (.jimple/.class) in folder except the seed
+            File folderFile = seedFolder.toFile();
+            File[] listFiles = folderFile.listFiles();
+            for (int i = listFiles.length - 1; i >= 0; i--) {
+                File fileEntry = listFiles[i];
+                if (fileEntry.isFile()) {
+                    String filename = fileEntry.getName();
+
+                    if (filename.endsWith(".jimple") || filename.endsWith(".class")) {
+                        filename = filename.substring(0, filename.lastIndexOf("."));
+                    } else {
+                        continue;
+                    }
+
+                    if (filename.equals(seedName)) {
+                        // Same class, do not reload
+                        continue;
+                    }
+
+                    logger.info("Loading class {}", filename);
+                    Mutant mut = Mutant.loadClass(filename);
+                    currentProg.insertSeedDependency(mut);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(mut.toString());
+                    }
+                }
+            }
         } else {
             currentProg = new Program(rand, "Test");
         }
@@ -235,6 +265,9 @@ public class ConfuzzionMain {
                 e.undoMutation();
                 statusScreen.newMutation(e.getMutationClass(), Status.FAILED, 0);
                 continue;
+            } catch (Throwable e) {
+                logger.error("Error while applying mutation", e);
+                break;
             }
 
             logger.info("Mutation: {}", mutation.getClass().toString());
