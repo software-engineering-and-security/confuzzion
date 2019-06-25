@@ -45,6 +45,9 @@ public class Repro {
             logger.info("Soot Classpath: {}", Scene.v().getSootClassPath());
             logger.info("java.home: {}", System.getProperty("java.home"));
 
+            if (!(input.endsWith(".jimple") || input.endsWith(".class"))) {
+                Repro.printHelp(options);
+            }
             String classname = Paths.get(input).getFileName().toString();
             // Load all classes (.jimple/.class) except classname inside folder
             File folderFile = new File(folder);
@@ -68,9 +71,6 @@ public class Repro {
                 }
             }
 
-            if (!(input.endsWith(".jimple") || input.endsWith(".class"))) {
-                Repro.printHelp(options);
-            }
             classname = classname.substring(0, classname.lastIndexOf("."));
 
             Mutant mut = Mutant.loadClass(classname);
