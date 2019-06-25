@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 public class Program {
     private String classBaseName;
     private ArrayList<Mutant> mutants;
+    private int startIndex;
     private HashSet<SootMethod> executedMethods;
     private RandomGenerator rand;
 
@@ -60,10 +61,10 @@ public class Program {
         @Override
         public void run() {
             try {
+                // Call method <clinit>
                 Class<?> clazz = loader.load(className, bytecode);
+                // Call method <init>
                 clazz.newInstance();
-                //TODO: Method[] methods = clazz.getMethods();
-                //TODO: invoke methods ?: method.invoke(clazz.newInstance());
             } catch(Throwable e) {
                 if (e instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
@@ -83,6 +84,7 @@ public class Program {
         this.rand = rand;
         mutants = new ArrayList<Mutant>();
         executedMethods = new HashSet<SootMethod>();
+        startIndex = 0;
 
         // Create first empty Mutant (main class)
         MutantGenerator generator = new MutantGenerator(rand, classBaseName + "0");
@@ -97,13 +99,19 @@ public class Program {
      * @param seedMutant first Mutant to use
      */
     public Program(RandomGenerator rand, Mutant seedMutant) {
-        this.classBaseName = seedMutant.getClassName();
+        this.classBaseName = seedMutant.getClassName() + "Test";
         this.rand = rand;
         mutants = new ArrayList<Mutant>();
         executedMethods = new HashSet<SootMethod>();
+        startIndex = 0;
 
         mutants.add(seedMutant);
         rand.addStrMutant(seedMutant.getClassName());
+    }
+
+    public void insertSeedDependency(Mutant seedDependency) {
+        mutants.add(0, seedDependency);
+        startIndex++;
     }
 
     public Mutant genNewClass() {
@@ -304,14 +312,21 @@ public class Program {
     public void genAndLaunch(int timeout, boolean jasmin_backend) throws Throwable {
         ByteClassLoader loader =
                 new ByteClassLoader(Thread.currentThread().getContextClassLoader());
-        for (int i = mutants.size() - 1; i >= 0; i--) {
+        // Load dependencies
+        for (int i = 0; i < startIndex; i++) {
+            Mutant mut = mutants.get(i);
+            byte[] array = mut.toClass(jasmin_backend);
+            loader.load(mut.getClassName(), array);
+        }
+        // Load and instantiate (call <init>) all other mutants
+        for (int i = mutants.size() - 1; i >= startIndex; i--) {
             Mutant mut = mutants.get(i);
             if (logger.isDebugEnabled()) {
                 logger.debug("===Class {}{}===", classBaseName, i);
                 logger.debug(mut.toString());
             }
             byte[] array = mut.toClass(jasmin_backend);
-            Launcher launcher = new Launcher(loader, array, classBaseName + i);
+            Launcher launcher = new Launcher(loader, array, mut.getClassName());
             Thread thread = new Thread(launcher);
             Handler handler = new Handler();
             thread.setUncaughtExceptionHandler(handler);
@@ -336,7 +351,7 @@ public class Program {
     public void genAndLaunchWithJVM(String javahome, String folder, int timeout, boolean jasmin_backend) throws Throwable {
         this.saveAsClassFiles(folder, jasmin_backend);
         MutantGenerator gen = new MutantGenerator(rand, "Main");
-        Mutant mut = gen.genMainLoader(mutants);
+        Mutant mut = gen.genMainLoader(mutants.subList(startIndex, mutants.size()));
         mut.toClassFile(folder, jasmin_backend);
         Util.startJVM(javahome, folder, mut.getClassName(), timeout);
     }
