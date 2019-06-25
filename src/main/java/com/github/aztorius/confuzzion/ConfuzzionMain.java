@@ -28,6 +28,7 @@ public class ConfuzzionMain {
     private static final int TIMEOUT = 1000;
     private static final int STACK_LIMIT = Integer.MAX_VALUE;
     private static final boolean WITH_JVM = true;
+    private static final boolean JASMIN_BACKEND = false;
     private static final Logger logger = LoggerFactory.getLogger(ConfuzzionMain.class);
 
     public ConfuzzionMain(Path resultFolder) {
@@ -44,6 +45,8 @@ public class ConfuzzionMain {
         int stackLimit = ConfuzzionMain.STACK_LIMIT;
         boolean withJVM = ConfuzzionMain.WITH_JVM;
         String javahome = System.getProperty("java.home");
+        Path seedFile = null;
+        boolean jasmin_backend = ConfuzzionMain.JASMIN_BACKEND;
 
         try {
             CommandLine line = parser.parse(options, args);
@@ -69,6 +72,10 @@ public class ConfuzzionMain {
             if (line.hasOption("j")) {
                 javahome = line.getOptionValue("j");
             }
+            if (line.hasOption("s")) {
+                seedFile = Paths.get(line.getOptionValue("s"));
+            }
+            jasmin_backend = line.hasOption("jasmin");
 
             if (!Files.exists(resultFolder)) {
                 Files.createDirectories(resultFolder);
@@ -85,7 +92,7 @@ public class ConfuzzionMain {
 
         ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
 
-        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome);
+        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome, seedFile, jasmin_backend);
     }
 
     private static Options configParameters() {
@@ -136,6 +143,20 @@ public class ConfuzzionMain {
                 .required(false)
                 .build();
 
+        final Option seedOption = Option.builder("s")
+                .longOpt("seed")
+                .desc("Seed file to start mutations from")
+                .hasArg(true)
+                .argName("seed")
+                .required(false)
+                .build();
+
+        final Option jasminOption = Option.builder("jasmin")
+                .desc("Use Jasmin backend instead of ASM")
+                .hasArg(false)
+                .required(false)
+                .build();
+
         final Option helpOption = Option.builder("h")
                 .longOpt("help")
                 .desc("Print this message")
@@ -151,6 +172,8 @@ public class ConfuzzionMain {
         options.addOption(runnerOption);
         options.addOption(jvmOption);
         options.addOption(stackLimitOption);
+        options.addOption(seedOption);
+        options.addOption(jasminOption);
         options.addOption(helpOption);
 
         return options;
@@ -169,7 +192,7 @@ public class ConfuzzionMain {
         }
     }
 
-    public void startMutation(long mainloop_turn, int timeout, int stackLimit, boolean withJVM, String javahome) {
+    public void startMutation(long mainloop_turn, int timeout, int stackLimit, boolean withJVM, String javahome, Path seedFile, boolean jasmin_backend) {
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
         logger.info("Soot Class Path: {}", Scene.v().getSootClassPath());
@@ -177,11 +200,23 @@ public class ConfuzzionMain {
         logger.info("Target java.home: {}", javahome);
 
         RandomGenerator rand = new RandomGenerator();
+
+        Program currentProg = null;
+        if (seedFile != null) {
+            logger.info("Seed file: {}", seedFile);
+            Path seedFolder = seedFile.getParent().toAbsolutePath().normalize();
+            Scene.v().extendSootClassPath(seedFolder.toString());
+            String seedName = seedFile.getFileName().toString();
+            seedName = seedName.substring(0, seedName.lastIndexOf("."));
+
+            Mutant seedMutant = Mutant.loadClass(seedName);
+            currentProg = new Program(rand, seedMutant);
+        } else {
+            currentProg = new Program(rand, "Test");
+        }
+
         ArrayList<Contract> contracts = new ArrayList<Contract>();
         contracts.add(new ContractTypeConfusion());
-
-        Program currentProg = new Program("Test", rand);
-
         Stack<Mutation> mutationsStack = new Stack<Mutation>();
 
         // Refresh Status in command line each second
@@ -221,9 +256,9 @@ public class ConfuzzionMain {
                         logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                         break;
                     }
-                    currentProg.genAndLaunchWithJVM(javahome, folder.toString(), timeout);
+                    currentProg.genAndLaunchWithJVM(javahome, folder.toString(), timeout, jasmin_backend);
                 } else { //with threads
-                    currentProg.genAndLaunch(timeout);
+                    currentProg.genAndLaunch(timeout, jasmin_backend);
                 }
                 // Remove contracts checks for next turn
                 currentProg.removeContractsChecks(contractsMutations);
@@ -234,14 +269,14 @@ public class ConfuzzionMain {
             } catch(Throwable e) {
                 logger.warn("Exception while executing program", e);
                 Throwable cause = Util.getCause(e);
-                if (ContractCheckException.class.isInstance(cause)) {
+                if (cause instanceof ContractCheckException) {
                     keepFolder = true;
                     // Save current classes also as jimple files
                     currentProg.saveAsJimpleFiles(folder.toString());
                     // Update status screen
                     statusScreen.newMutation(mutation.getClass(),
                         Status.VIOLATES, 2);
-                } else if (InterruptedException.class.isInstance(cause)) {
+                } else if (cause instanceof InterruptedException) {
                     // Update status screen
                     statusScreen.newMutation(mutation.getClass(),
                         Status.INTERRUPTED, 2);

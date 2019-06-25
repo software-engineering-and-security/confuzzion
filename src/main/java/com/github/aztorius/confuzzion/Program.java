@@ -75,11 +75,10 @@ public class Program {
 
     /**
      * Program constructor
-     * @param classBaseName the base name of all classes inside this program
      * @param rand          the RandomGenerator that will be used
+     * @param classBaseName the base name of all classes inside this program
      */
-    public Program(String classBaseName, RandomGenerator rand) {
-        // Initialize class fields
+    public Program(RandomGenerator rand, String classBaseName) {
         this.classBaseName = classBaseName;
         this.rand = rand;
         mutants = new ArrayList<Mutant>();
@@ -90,6 +89,21 @@ public class Program {
         Mutant firstMutant = generator.genEmptyClass("java.lang.Object");
         mutants.add(firstMutant);
         rand.addStrMutant(firstMutant.getClassName());
+    }
+
+    /**
+     * Program constructor with a specific seed class
+     * @param rand
+     * @param seedMutant first Mutant to use
+     */
+    public Program(RandomGenerator rand, Mutant seedMutant) {
+        this.classBaseName = seedMutant.getClassName();
+        this.rand = rand;
+        mutants = new ArrayList<Mutant>();
+        executedMethods = new HashSet<SootMethod>();
+
+        mutants.add(seedMutant);
+        rand.addStrMutant(seedMutant.getClassName());
     }
 
     public Mutant genNewClass() {
@@ -284,9 +298,10 @@ public class Program {
      * Generate and launch program within a separate Thread
      * Warning: this will not kill threads within a while(true) loop. Use genAndLaunchWithJVM() instead
      * @param timeout in milliseconds before interrupting the Thread
+     * @param jasmin_backend use Jasmin backend instead of ASM
      * @throws Throwable can throw any type of Throwable or InterruptedException
      */
-    public void genAndLaunch(int timeout) throws Throwable {
+    public void genAndLaunch(int timeout, boolean jasmin_backend) throws Throwable {
         ByteClassLoader loader =
                 new ByteClassLoader(Thread.currentThread().getContextClassLoader());
         for (int i = mutants.size() - 1; i >= 0; i--) {
@@ -295,7 +310,7 @@ public class Program {
                 logger.debug("===Class {}{}===", classBaseName, i);
                 logger.debug(mut.toString());
             }
-            byte[] array = mut.toClass();
+            byte[] array = mut.toClass(jasmin_backend);
             Launcher launcher = new Launcher(loader, array, classBaseName + i);
             Thread thread = new Thread(launcher);
             Handler handler = new Handler();
@@ -315,13 +330,14 @@ public class Program {
      * @param javahome target JVM to launch
      * @param folder
      * @param timeout in milliseconds before killing the JVM
+     * @param jasmin_backend use Jasmin backend instead of ASM
      * @throws Throwable
      */
-    public void genAndLaunchWithJVM(String javahome, String folder, int timeout) throws Throwable {
-        this.saveAsClassFiles(folder);
+    public void genAndLaunchWithJVM(String javahome, String folder, int timeout, boolean jasmin_backend) throws Throwable {
+        this.saveAsClassFiles(folder, jasmin_backend);
         MutantGenerator gen = new MutantGenerator(rand, "Main");
         Mutant mut = gen.genMainLoader(mutants);
-        mut.toClassFile(folder);
+        mut.toClassFile(folder, jasmin_backend);
         Util.startJVM(javahome, folder, mut.getClassName(), timeout);
     }
 
@@ -329,9 +345,9 @@ public class Program {
      * Save all classes of this program
      * @param folder destination
      */
-    public void saveAsClassFiles(String folder) {
+    public void saveAsClassFiles(String folder, boolean jasmin_backend) {
         for (Mutant mut : mutants) {
-            mut.toClassFile(folder);
+            mut.toClassFile(folder, jasmin_backend);
         }
     }
 

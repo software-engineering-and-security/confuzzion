@@ -38,7 +38,7 @@ public class MutantGenerator {
 
     public MutantGenerator(RandomGenerator rand, String className) {
         this.rand = rand;
-        mutant = new Mutant(className);
+        mutant = new Mutant(null);
         counter = 0;
     }
 

@@ -1,12 +1,20 @@
 package com.github.aztorius.confuzzion;
 
 import soot.Printer;
+import soot.Scene;
 import soot.SootClass;
+import soot.SootMethod;
+import soot.Unit;
+import soot.baf.BafASMBackend;
+import soot.jimple.AssignStmt;
+import soot.jimple.CastExpr;
 import soot.jimple.JasminClass;
+import soot.options.Options;
 import soot.util.JasminOutputStream;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -23,7 +31,6 @@ import org.slf4j.LoggerFactory;
  * class file
  */
 public class Mutant {
-    private String className;
     private SootClass sClass;
 
     private static final Logger logger = LoggerFactory.getLogger(Mutant.class);
@@ -32,17 +39,12 @@ public class Mutant {
      * Constructor
      * @param className ex: Test0
      */
-    public Mutant(String className) {
-        this.className = className;
-    }
-
     public Mutant(SootClass sClass) {
-        this.className = sClass.getShortName();
         this.sClass = sClass;
     }
 
     public String getClassName() {
-        return className;
+        return sClass.getShortName();
     }
 
     public SootClass getSootClass() {
@@ -54,46 +56,67 @@ public class Mutant {
     }
 
     /**
+     * Generate bytecode to an output stream
+     * @param stream output
+     * @param jasmin_backend use Jasmin backend instead of ASM
+     */
+    public void toBytecode(OutputStream stream, boolean jasmin_backend) {
+        try {
+            logger.info("Using {} backend", jasmin_backend ? "Jasmin" : "ASM");
+            if (jasmin_backend) {
+                OutputStream streamOut = new JasminOutputStream(stream);
+                PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
+                JasminClass jasminClass = new JasminClass(sClass);
+                jasminClass.print(writerOut);
+                writerOut.flush();
+                streamOut.close();
+                writerOut.close();
+            } else {
+                int java_version = Options.v().java_version();
+                BafASMBackend backend = new BafASMBackend(sClass, java_version);
+                backend.generateClassFile(stream);
+            }
+        } catch (IOException e) {
+            logger.error("OutputStream {}", stream.toString(), e);
+        }
+    }
+
+    /**
      * Save the SootClass as a .class file
      * @param  folder destination folder that already exists
+     * @param  jasmin_backend use Jasmin backend instead of ASM
      * @return        filepath
      */
-    public String toClassFile(String folder) {
+    public String toClassFile(String folder, boolean jasmin_backend) {
         String fileName = Paths.get(folder, sClass.getShortName() + ".class").toString();
         try {
-            OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
-            PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
-            JasminClass jasminClass = new JasminClass(sClass);
-            jasminClass.print(writerOut);
-            writerOut.flush();
-            streamOut.close();
-        } catch (IOException e) {
-            logger.error("Writing file {}", fileName, e);
+            this.toBytecode(new FileOutputStream(fileName), jasmin_backend);
+        } catch (FileNotFoundException e) {
+            logger.error("File {}", fileName, e);
         }
         return fileName;
     }
 
     /**
      * Build the bytecode of the class in memory
+     * @param jasmin_backend use Jasmin backend instead of ASM
      * @return bytecode of the class as an array or byte
      */
-    public byte[] toClass() {
+    public byte[] toClass(boolean jasmin_backend) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        OutputStream streamOut = new JasminOutputStream(stream);
-        PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
-        {
-            JasminClass jasminClass = new JasminClass(sClass);
-            jasminClass.print(writerOut);
-        }
-        writerOut.flush();
+        this.toBytecode(stream, jasmin_backend);
         byte[] classContent = stream.toByteArray();
-        try {
-            streamOut.close();
-        } catch (IOException e) {
-            logger.error("Converting to class bytecode in memory", e);
-            return null;
-        }
         return classContent;
+    }
+
+    /**
+     * Generate Jimple to output stream. Does not close output stream.
+     * @param stream output
+     */
+    public void toJimple(OutputStream stream) {
+        PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(stream));
+        Printer.v().printTo(sClass, writerOut);
+        writerOut.flush();
     }
 
     /**
@@ -105,9 +128,7 @@ public class Mutant {
         String fileName = Paths.get(folder, sClass.getShortName() + ".jimple").toString();
         try {
             OutputStream streamOut = new FileOutputStream(fileName);
-            PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
-            Printer.v().printTo(sClass, writerOut);
-            writerOut.flush();
+            this.toJimple(streamOut);
             streamOut.close();
         } catch (IOException e) {
             logger.error("Writing file {}", fileName, e);
@@ -120,17 +141,39 @@ public class Mutant {
      */
     public void toStdOut() {
         OutputStream streamOut = new FileOutputStream(FileDescriptor.out);
-        PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
-        Printer.v().printTo(sClass, writerOut);
-        writerOut.flush();
+        this.toJimple(streamOut);
     }
 
     @Override
     public String toString() {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(buffer));
-        Printer.v().printTo(sClass, writerOut);
-        writerOut.flush();
+        this.toJimple(buffer);
         return new String(buffer.toByteArray(), Charset.forName("UTF-8"));
+    }
+
+    /**
+     * Load a class from SootClassPath folders, remove CastExpr, validate and return Mutant
+     * @param classname in java.lang.Object format
+     * @return
+     */
+    public static Mutant loadClass(String classname) {
+        SootClass sClass = Scene.v().loadClassAndSupport(classname);
+        sClass.setApplicationClass();
+        for (SootMethod m : sClass.getMethods()) {
+            // Load method body
+            m.retrieveActiveBody();
+            // Remove soot CastExpr from units
+            for (Unit u : m.getActiveBody().getUnits()) {
+                if (u instanceof AssignStmt) {
+                    AssignStmt uA = (AssignStmt)u;
+                    if (uA.getRightOp() instanceof CastExpr) {
+                        CastExpr cExpr = (CastExpr)uA.getRightOp();
+                        uA.setRightOp(cExpr.getOp());
+                    }
+                }
+            }
+        }
+        sClass.validate();
+        return new Mutant(sClass);
     }
 }

@@ -15,11 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import soot.Scene;
-import soot.SootClass;
-import soot.SootMethod;
-import soot.Unit;
-import soot.jimple.AssignStmt;
-import soot.jimple.CastExpr;
 
 public class Repro {
     private static final Logger logger = LoggerFactory.getLogger(Repro.class);
@@ -31,6 +26,8 @@ public class Repro {
 
         try {
             CommandLine line = parser.parse(options, args);
+
+            boolean jasmin_backend = line.hasOption("jasmin");
 
             if (line.hasOption("h")) {
                 Repro.printHelp(options);
@@ -63,11 +60,11 @@ public class Repro {
                         continue;
                     }
                     logger.info("Loading class {}", filename);
-                    Mutant mut = Repro.loadClassInSoot(filename);
+                    Mutant mut = Mutant.loadClass(filename);
                     if (logger.isDebugEnabled()) {
                         logger.debug(mut.toString());
                     }
-                    Repro.loadClass(mut, loader);
+                    Repro.loadClass(mut, loader, jasmin_backend);
                 }
             }
 
@@ -76,18 +73,18 @@ public class Repro {
             }
             classname = classname.substring(0, classname.lastIndexOf("."));
 
-            Mutant mut = Repro.loadClassInSoot(classname);
+            Mutant mut = Mutant.loadClass(classname);
             if (logger.isDebugEnabled()) {
                 logger.debug(mut.toString());
             }
             if (line.hasOption("s")) {
                 if (input.endsWith(".jimple")) {
-                    mut.toClassFile(folder);
+                    mut.toClassFile(folder, jasmin_backend);
                 } else if (input.endsWith(".class")) {
                     mut.toJimpleFile(folder);
                 }
             }
-            Class<?> clazz = Repro.loadClass(mut, loader);
+            Class<?> clazz = Repro.loadClass(mut, loader, jasmin_backend);
             Repro.launchClass(clazz);
         } catch (ParseException e) {
             logger.error("Options parsing failed", e);
@@ -95,28 +92,8 @@ public class Repro {
         }
     }
 
-    private static Mutant loadClassInSoot(String classname) {
-        SootClass sClass = Scene.v().loadClassAndSupport(classname);
-        sClass.setApplicationClass();
-        for (SootMethod m : sClass.getMethods()) {
-            // Load method body
-            m.retrieveActiveBody();
-            // Remove soot CastExpr from units
-            for (Unit u : m.getActiveBody().getUnits()) {
-                if (u instanceof AssignStmt) {
-                    AssignStmt uA = (AssignStmt)u;
-                    if (uA.getRightOp() instanceof CastExpr) {
-                        CastExpr cExpr = (CastExpr)uA.getRightOp();
-                        uA.setRightOp(cExpr.getOp());
-                    }
-                }
-            }
-        }
-        return new Mutant(sClass);
-    }
-
-    private static Class<?> loadClass(Mutant mut, ByteClassLoader loader) {
-        byte[] classContent = mut.toClass();
+    private static Class<?> loadClass(Mutant mut, ByteClassLoader loader, boolean jasmin_backend) {
+        byte[] classContent = mut.toClass(jasmin_backend);
         Class<?> clazz = null;
         try {
             clazz = loader.load(mut.getClassName(), classContent);
@@ -156,6 +133,12 @@ public class Repro {
                 .required(false)
                 .build();
 
+        final Option jasminOption = Option.builder("jasmin")
+                .desc("Use Jasmin backend instead of ASM")
+                .hasArg(false)
+                .required(false)
+                .build();
+
         final Option helpOption = Option.builder("h")
                 .longOpt("help")
                 .desc("Print this message")
@@ -167,6 +150,7 @@ public class Repro {
 
         options.addOption(inputOption);
         options.addOption(saveOption);
+        options.addOption(jasminOption);
         options.addOption(helpOption);
 
         return options;
