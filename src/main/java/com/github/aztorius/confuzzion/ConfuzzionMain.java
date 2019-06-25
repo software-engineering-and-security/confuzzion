@@ -245,7 +245,7 @@ public class ConfuzzionMain {
             // Save current classes to unique folder
             Path folder = Paths.get(
                     resultFolder.toAbsolutePath().toString(),
-                    mutation.getClass().getSimpleName() + "-" + loop1);
+                    loop1 + "-" + mutation.getClass().getSimpleName());
             Boolean keepFolder = false;
             try {
                 // Instantiation and launch
