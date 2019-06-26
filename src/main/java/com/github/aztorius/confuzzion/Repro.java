@@ -27,12 +27,12 @@ public class Repro {
         try {
             CommandLine line = parser.parse(options, args);
 
-            boolean jasmin_backend = line.hasOption("jasmin");
-            int java_version = soot.options.Options.java_version_default;
+            ConfuzzionOptions.v().use_jasmin_backend = line.hasOption("jasmin");
+            ConfuzzionOptions.v().allow_unsafe_assignment = line.hasOption("uassign");
 
             if (line.hasOption("jversion")) {
                 // soot.options.Options java_version corresponds to java_version + 1
-                java_version = Integer.parseInt(line.getOptionValue("jversion")) + 1;
+                ConfuzzionOptions.v().java_version = Integer.parseInt(line.getOptionValue("jversion")) + 1;
             }
 
             if (line.hasOption("h")) {
@@ -73,7 +73,7 @@ public class Repro {
                     if (logger.isDebugEnabled()) {
                         logger.debug(mut.toString());
                     }
-                    Repro.loadClass(mut, loader, jasmin_backend, java_version);
+                    Repro.loadClass(mut, loader);
                 }
             }
 
@@ -85,12 +85,12 @@ public class Repro {
             }
             if (line.hasOption("s")) {
                 if (input.endsWith(".jimple")) {
-                    mut.toClassFile(folder, jasmin_backend, java_version);
+                    mut.toClassFile(folder);
                 } else if (input.endsWith(".class")) {
                     mut.toJimpleFile(folder);
                 }
             }
-            Class<?> clazz = Repro.loadClass(mut, loader, jasmin_backend, java_version);
+            Class<?> clazz = Repro.loadClass(mut, loader);
             Repro.launchClass(clazz);
         } catch (ParseException e) {
             logger.error("Options parsing failed", e);
@@ -98,8 +98,8 @@ public class Repro {
         }
     }
 
-    private static Class<?> loadClass(Mutant mut, ByteClassLoader loader, boolean jasmin_backend, int java_version) {
-        byte[] classContent = mut.toClass(jasmin_backend, java_version);
+    private static Class<?> loadClass(Mutant mut, ByteClassLoader loader) {
+        byte[] classContent = mut.toClass();
         Class<?> clazz = null;
         try {
             clazz = loader.load(mut.getClassName(), classContent);
@@ -146,9 +146,17 @@ public class Repro {
                 .build();
 
         final Option javaVersionOption = Option.builder("jversion")
+                .longOpt("java-version")
                 .desc("Force Java version of output bytecode to : 1-9")
                 .hasArg(true)
                 .argName("java-version")
+                .required(false)
+                .build();
+
+        final Option unsafeAssignment = Option.builder("uassign")
+                .longOpt("unsafe-assignment")
+                .desc("Allow unsafe assignment in bytecode without checkcast")
+                .hasArg(false)
                 .required(false)
                 .build();
 
@@ -165,6 +173,7 @@ public class Repro {
         options.addOption(saveOption);
         options.addOption(jasminOption);
         options.addOption(javaVersionOption);
+        options.addOption(unsafeAssignment);
         options.addOption(helpOption);
 
         return options;

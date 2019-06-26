@@ -29,7 +29,6 @@ public class ConfuzzionMain {
     private static final int TIMEOUT = 1000;
     private static final int STACK_LIMIT = Integer.MAX_VALUE;
     private static final boolean WITH_JVM = true;
-    private static final boolean JASMIN_BACKEND = false;
     private static final Logger logger = LoggerFactory.getLogger(ConfuzzionMain.class);
 
     public ConfuzzionMain(Path resultFolder) {
@@ -47,8 +46,6 @@ public class ConfuzzionMain {
         boolean withJVM = ConfuzzionMain.WITH_JVM;
         String javahome = System.getProperty("java.home");
         Path seedFile = null;
-        boolean jasmin_backend = ConfuzzionMain.JASMIN_BACKEND;
-        int java_version = soot.options.Options.java_version_default;
 
         try {
             CommandLine line = parser.parse(options, args);
@@ -79,9 +76,10 @@ public class ConfuzzionMain {
             }
             if (line.hasOption("jversion")) {
                 // soot.options.Options java_version corresponds to java_version + 1
-                java_version = Integer.parseInt(line.getOptionValue("java-version")) + 1;
+                ConfuzzionOptions.v().java_version = Integer.parseInt(line.getOptionValue("java-version")) + 1;
             }
-            jasmin_backend = line.hasOption("jasmin");
+            ConfuzzionOptions.v().use_jasmin_backend = line.hasOption("jasmin");
+            ConfuzzionOptions.v().allow_unsafe_assignment = line.hasOption("uassign");
 
             if (!Files.exists(resultFolder)) {
                 Files.createDirectories(resultFolder);
@@ -98,7 +96,7 @@ public class ConfuzzionMain {
 
         ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
 
-        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome, seedFile, jasmin_backend, java_version);
+        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome, seedFile);
     }
 
     private static Options configParameters() {
@@ -164,9 +162,17 @@ public class ConfuzzionMain {
                 .build();
 
         final Option javaVersionOption = Option.builder("jversion")
+                .longOpt("java-version")
                 .desc("Force Java version of output bytecode to : 1-9")
                 .hasArg(true)
                 .argName("java-version")
+                .required(false)
+                .build();
+
+        final Option unsafeAssignment = Option.builder("uassign")
+                .longOpt("unsafe-assignment")
+                .desc("Allow unsafe assignment in bytecode without checkcast")
+                .hasArg(false)
                 .required(false)
                 .build();
 
@@ -188,6 +194,7 @@ public class ConfuzzionMain {
         options.addOption(seedOption);
         options.addOption(jasminOption);
         options.addOption(javaVersionOption);
+        options.addOption(unsafeAssignment);
         options.addOption(helpOption);
 
         return options;
@@ -206,7 +213,7 @@ public class ConfuzzionMain {
         }
     }
 
-    public void startMutation(long mainloop_turn, int timeout, int stackLimit, boolean withJVM, String javahome, Path seedFile, boolean jasmin_backend, int java_version) {
+    public void startMutation(long mainloop_turn, int timeout, int stackLimit, boolean withJVM, String javahome, Path seedFile) {
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
         logger.info("Soot Class Path: {}", Scene.v().getSootClassPath());
@@ -302,9 +309,9 @@ public class ConfuzzionMain {
                         logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                         break;
                     }
-                    currentProg.genAndLaunchWithJVM(javahome, folder.toString(), timeout, jasmin_backend, java_version);
+                    currentProg.genAndLaunchWithJVM(javahome, folder.toString(), timeout);
                 } else { //with threads
-                    currentProg.genAndLaunch(timeout, jasmin_backend, java_version);
+                    currentProg.genAndLaunch(timeout);
                 }
                 // Remove contracts checks for next turn
                 currentProg.removeContractsChecks(contractsMutations);

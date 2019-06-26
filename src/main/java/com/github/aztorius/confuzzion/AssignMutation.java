@@ -12,6 +12,7 @@ public class AssignMutation extends MethodMutation {
             throws MutationException {
         super(rand, method);
 
+        boolean allow_unsafe_assignment = ConfuzzionOptions.v().allow_unsafe_assignment;
         Body body = method.getActiveBody();
         if (body.getLocals().size() == 0) {
             throw new MutationException(AssignMutation.class,
@@ -31,7 +32,7 @@ public class AssignMutation extends MethodMutation {
             // Pick a type from locals
             typeAfter = rand.randLocalRef(body.getLocals()).getType();
         }
-        if (rand.nextBoolean()) {
+        if (!allow_unsafe_assignment || rand.nextBoolean()) {
             // Do a valid assignment to a common parent class
             typeAfter = typeBefore.merge(typeAfter, Scene.v());
         } //else: do a direct assignment between typeBefore and typeAfter
