@@ -333,6 +333,7 @@ public class Program {
             thread.join(timeout);
             if (thread.isAlive()) {
                 thread.interrupt();
+                thread.stop();
                 throw new InterruptedException();
             }
             handler.throwException();
