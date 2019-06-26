@@ -318,7 +318,7 @@ public class ConfuzzionMain {
                 // Add mutation to the stack
                 mutationsStack.push(mutation);
                 // Update status screen
-                statusScreen.newMutation(mutation.getClass(), Status.SUCCESS, 2);
+                statusScreen.newMutation(mutation.getClass(), Status.SUCCESS, 1);
             } catch(Throwable e) {
                 logger.warn("Exception while executing program", e);
                 Throwable cause = Util.getCause(e);
@@ -327,16 +327,13 @@ public class ConfuzzionMain {
                     // Save current classes also as jimple files
                     currentProg.saveAsJimpleFiles(folder.toString());
                     // Update status screen
-                    statusScreen.newMutation(mutation.getClass(),
-                        Status.VIOLATES, 2);
+                    statusScreen.newMutation(mutation.getClass(), Status.VIOLATES, 1);
                 } else if (cause instanceof InterruptedException) {
                     // Update status screen
-                    statusScreen.newMutation(mutation.getClass(),
-                        Status.INTERRUPTED, 2);
+                    statusScreen.newMutation(mutation.getClass(), Status.INTERRUPTED, 1);
                 } else {
                     // Update status screen
-                    statusScreen.newMutation(mutation.getClass(),
-                        Status.CRASHED, 2);
+                    statusScreen.newMutation(mutation.getClass(), Status.CRASHED, 1);
                 }
                 // Remove contracts checks
                 currentProg.removeContractsChecks(contractsMutations);
