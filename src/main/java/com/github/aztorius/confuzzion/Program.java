@@ -118,7 +118,7 @@ public class Program {
         String className = classBaseName + mutants.size();
         MutantGenerator generator = new MutantGenerator(rand, className);
         rand.addStrMutant(className);
-        String superClass = rand.randClassName(className);
+        String superClass = rand.randClassName(className, false);
         if (rand.nextBoolean()) {
             superClass = "java.lang.Object";
         }

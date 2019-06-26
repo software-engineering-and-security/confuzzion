@@ -57,9 +57,10 @@ public class RandomGenerator {
         this.rand = rand;
         this.counter = 0;
         strClasses = new ArrayList<String>();
-        strClasses.add("java.lang.invoke.MethodHandles");
+        //strClasses.add("java.lang.invoke.MethodHandles");
         strClasses.add("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
         strClasses.add("java.lang.Integer");
+        strClasses.add("java.lang.String");
         strMutants = new ArrayList<String>();
     }
 
@@ -163,7 +164,7 @@ public class RandomGenerator {
         if (type == BooleanType.v()) {
             val = soot.jimple.IntConstant.v(this.getIntFromPool(poolBoolean));
         } else if (type == ByteType.v()) {
-            val = soot.jimple.IntConstant.v(this.nextUint() % 256);
+            val = soot.jimple.IntConstant.v(this.nextUint(256));
         } else if (type == CharType.v()) {
             val = soot.jimple.IntConstant.v(this.getIntFromPool(poolChar));
         } else if (type == DoubleType.v()) {
@@ -183,14 +184,20 @@ public class RandomGenerator {
         return val;
     }
 
-    public String randClassName(String className) {
+    /**
+     * Select a random class string
+     * @param className
+     * @param can_be_itself if true then result can be className
+     * @return
+     */
+    public String randClassName(String className, boolean can_be_itself) {
         // Choose a class from strClasses
         String classString = strClasses.get(this.nextUint(strClasses.size()));
         if (this.nextBoolean()) {
             // Choose a class generated after current one
             int index = strMutants.indexOf(className);
             int random = this.nextUint(strMutants.size() - index);
-            if (random != 0) {
+            if (random != 0 || can_be_itself) {
                 classString = strMutants.get(random + index);
             } //else: skip choosing our own class
         }
@@ -198,7 +205,7 @@ public class RandomGenerator {
     }
 
     public Value randClassConstant(String className) {
-        String classString = this.randClassName(className);
+        String classString = this.randClassName(className, true);
         SootClass sClass = Util.getOrLoadSootClass(classString);
         return ClassConstant.fromType(sClass.getType());
     }
@@ -210,7 +217,7 @@ public class RandomGenerator {
      */
     public Value randString(String className) {
         // Choose a random class
-        SootClass sootClass = Util.getOrLoadSootClass(this.randClassName(className));
+        SootClass sootClass = Util.getOrLoadSootClass(this.randClassName(className, true));
         String value = null;
         switch(this.nextUint(3)) {
         case 0:
@@ -282,7 +289,7 @@ public class RandomGenerator {
      * @return           random RefType
      */
     public Type randRefType(String className) {
-        return Util.getOrLoadSootClass(this.randClassName(className)).getType();
+        return Util.getOrLoadSootClass(this.randClassName(className, false)).getType();
     }
 
     /**
