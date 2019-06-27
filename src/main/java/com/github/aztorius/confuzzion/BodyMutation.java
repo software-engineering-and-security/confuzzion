@@ -49,6 +49,14 @@ public class BodyMutation {
         body.getUnits().insertAfter(toInsert, point);
     }
 
+    public List<Local> getLocals() {
+        return addedLocals;
+    }
+
+    public List<Unit> getUnits() {
+        return addedUnits;
+    }
+
     public List<ValueBox> getUseBoxes() {
         List<ValueBox> boxes = new ArrayList<ValueBox>();
         for (Unit unit : addedUnits) {

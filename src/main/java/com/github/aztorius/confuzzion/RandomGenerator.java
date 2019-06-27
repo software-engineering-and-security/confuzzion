@@ -116,8 +116,13 @@ public class RandomGenerator {
         return result;
     }
 
+    /**
+     * Get a pseudo-random number between 0 (included) and maxLimit (excluded)
+     * @param maxLimit
+     * @return
+     */
     public int nextUint(int maxLimit) {
-        return this.nextUint() % maxLimit;
+        return rand.nextInt(maxLimit);
     }
 
     public float nextFloat() {
