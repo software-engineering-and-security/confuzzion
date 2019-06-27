@@ -192,8 +192,11 @@ public class Program {
         mutation.undo();
     }
 
+    /**
+     * Returns a random SootMethod that is already executed
+     * @return
+     */
     private SootMethod randomSootMethod() {
-        // return a random method that is already executed
         SootClass sClass = this.randomSootClass();
         ArrayList<SootMethod> methods = new ArrayList<SootMethod>();
         for (SootMethod method : sClass.getMethods()) {
@@ -222,7 +225,7 @@ public class Program {
     private MethodMutation randomMethodMutation(SootMethod method)
             throws MutationException {
         MethodMutation mutation = null;
-        switch (rand.randLimits(0.05, 0.2, 1.0)) {
+        switch (rand.randLimits(0.3, 0.35, 1.0)) {
         case 0:
             mutation = new AddLocalMutation(rand, method);
             break;
@@ -282,18 +285,18 @@ public class Program {
      */
     public Mutation randomMutation() throws MutationException {
         Mutation mutation = null;
-        switch (rand.randLimits(0.01, 0.05, 1.0)) {
-        case 0: // P = 0,005 : Program level mutation
+        switch (rand.randLimits(0.02, 0.05, 1.0)) {
+        case 0: // Program level mutation
             if (mutants.size() < Program.MUTANTS_NUMBER_LIMIT) {
                 mutation = this.randomProgramMutation();
                 break;
             }
             // else fall through
-        case 1: // P = 0,005 : Class level mutation
+        case 1: // Class level mutation
             SootClass sootClass = this.randomSootClass();
             mutation = this.randomClassMutation(sootClass);
             break;
-        case 2: // P = 0,99 : Method/Body level mutation
+        case 2: // Method/Body level mutation
         default:
             SootMethod method = this.randomSootMethod();
             mutation = this.randomMethodMutation(method);
