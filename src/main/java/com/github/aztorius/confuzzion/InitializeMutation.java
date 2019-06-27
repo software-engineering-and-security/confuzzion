@@ -19,7 +19,7 @@ public class InitializeMutation extends MethodMutation {
         super(rand, method);
         Type type = local.getType();
         Value val = null;
-        if (RefType.class.isInstance(type)) {
+        if (type instanceof RefType) {
             // Assign a reference
             val = this.genObject(method.getActiveBody(), type.toString());
         } else {
@@ -42,7 +42,7 @@ public class InitializeMutation extends MethodMutation {
         super(rand, method);
         Type type = field.getType();
         Value val = null;
-        if (RefType.class.isInstance(type)) {
+        if (type instanceof RefType) {
             // Assign a reference
             val = this.genObject(method.getActiveBody(), type.toString());
         } else {

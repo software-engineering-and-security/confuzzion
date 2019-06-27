@@ -322,10 +322,10 @@ public class MutantGenerator {
                 continue;
             }
             Value locParam = null;
-            if (soot.PrimType.class.isInstance(paramType)) {
+            if (paramType instanceof PrimType) {
                 // paramType is a Primitive Type
                 locParam = rand.randConstant(paramType);
-            } else if (soot.ArrayType.class.isInstance(paramType)) {
+            } else if (paramType instanceof ArrayType) {
                 // paramType is an Array Type
                 locParam = this.genArray(body, paramType);
                 if (locParam == null) {
@@ -583,14 +583,14 @@ public class MutantGenerator {
             }
 
             // Create a primitive typed local with a constant
-            if (PrimType.class.isInstance(param)) {
+            if (param instanceof PrimType) {
                 Local loc = Jimple.v().newLocal("local" + this.nextInt(), param);
                 locals.add(loc);
                 units.add(Jimple.v().newAssignStmt(loc,
                     rand.randConstant(param)));
                 parameters.add(loc);
                 continue;
-            } else if (ArrayType.class.isInstance(param)) {
+            } else if (param instanceof ArrayType) {
                 parameters.add(this.genArray(body, param));
                 continue;
             }

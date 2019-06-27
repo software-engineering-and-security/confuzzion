@@ -60,7 +60,7 @@ public abstract class MethodMutation extends Mutation {
     public void randomConstants() {
         List<ValueBox> boxes = mutation.getUseBoxes();
         for (ValueBox box : boxes) {
-            if (Constant.class.isInstance(box.getValue())) {
+            if (box.getValue() instanceof Constant) {
                 Value val = rand.randConstant(box.getValue().getType());
                 if (val == null) {
                     continue;

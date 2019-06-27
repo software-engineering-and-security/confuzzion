@@ -32,7 +32,7 @@ public class EqualsContract implements Contract {
 
         for (Local local : body.getLocals()) {
             Type type = local.getType();
-            if (!RefType.class.isInstance(type)) {
+            if (!(type instanceof RefType)) {
                 continue;
             }
 

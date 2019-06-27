@@ -74,7 +74,7 @@ public class ContractTypeConfusion implements Contract {
                     Jimple.v().newAssignStmt(locBoolResult,
                             Jimple.v().newInstanceOfExpr(value, type)));
 
-            // if isInstance return 1 then jump at the end
+            // if instanceof returns 1 then jump at the end
             // else throw Exception
             mutation.addUnit(
                     Jimple.v().newIfStmt(

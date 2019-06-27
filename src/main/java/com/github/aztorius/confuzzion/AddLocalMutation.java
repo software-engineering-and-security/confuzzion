@@ -32,7 +32,7 @@ public class AddLocalMutation extends MethodMutation {
     public AddLocalMutation(RandomGenerator rand, SootMethod method, Type type) {
         super(rand, method);
 
-        if (PrimType.class.isInstance(type)) {
+        if (type instanceof PrimType) {
             // Primitive type
             Local local = Jimple.v().newLocal("local" + rand.nextIncrement(), type);
             mutation.addLocal(local);
