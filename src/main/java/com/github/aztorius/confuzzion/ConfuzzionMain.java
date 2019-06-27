@@ -133,7 +133,7 @@ public class ConfuzzionMain {
 
         final Option jvmOption = Option.builder("j")
                 .longOpt("jvm")
-                .desc("JAVA_HOME for execution / same as running JAVA_HOME by default")
+                .desc("JAVA_HOME for execution when not using --threads")
                 .hasArg(true)
                 .argName("jvm")
                 .required(false)
