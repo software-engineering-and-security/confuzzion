@@ -69,7 +69,7 @@ public class Util {
         outputStream.close();
     }
 
-    public static void startJVM(String javahome, String classpath, String className, int timeoutMiliseconds) throws Exception {
+    public static void startJVM(String javahome, String classpath, String className, long timeoutMiliseconds) throws Exception {
         String path = Paths.get(javahome, "bin", "java").toString();
         ProcessBuilder processBuilder = new ProcessBuilder(path, "-cp", classpath + ":" + Util.getJarPath(), className);
         if (logger.isInfoEnabled()) {

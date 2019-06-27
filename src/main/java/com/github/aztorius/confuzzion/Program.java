@@ -311,7 +311,7 @@ public class Program {
      * @param timeout in milliseconds before interrupting the Thread
      * @throws Throwable can throw any type of Throwable or InterruptedException
      */
-    public void genAndLaunch(int timeout) throws Throwable {
+    public void genAndLaunch(long timeout) throws Throwable {
         ByteClassLoader loader =
                 new ByteClassLoader(Thread.currentThread().getContextClassLoader());
         // Load dependencies
@@ -350,7 +350,7 @@ public class Program {
      * @param timeout in milliseconds before killing the JVM
      * @throws Throwable
      */
-    public void genAndLaunchWithJVM(String javahome, String folder, int timeout) throws Throwable {
+    public void genAndLaunchWithJVM(String javahome, String folder, long timeout) throws Throwable {
         this.saveAsClassFiles(folder);
         MutantGenerator gen = new MutantGenerator(rand, "Main");
         Mutant mut = gen.genMainLoader(mutants.subList(startIndex, mutants.size()));

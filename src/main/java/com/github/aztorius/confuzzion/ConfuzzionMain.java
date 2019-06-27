@@ -26,7 +26,7 @@ public class ConfuzzionMain {
     private Path resultFolder;
 
     private static final long MAIN_LOOP_ITERATIONS = 1000;
-    private static final int TIMEOUT = 1000;
+    private static final long TIMEOUT = 1000L;
     private static final int STACK_LIMIT = Integer.MAX_VALUE;
     private static final boolean WITH_JVM = true;
     private static final Logger logger = LoggerFactory.getLogger(ConfuzzionMain.class);
@@ -41,7 +41,7 @@ public class ConfuzzionMain {
 
         Path resultFolder = Paths.get("confuzzionResults/");
         long main_loop_iterations = ConfuzzionMain.MAIN_LOOP_ITERATIONS;
-        int timeout = ConfuzzionMain.TIMEOUT;
+        long timeout = ConfuzzionMain.TIMEOUT;
         int stackLimit = ConfuzzionMain.STACK_LIMIT;
         boolean withJVM = ConfuzzionMain.WITH_JVM;
         String javahome = System.getProperty("java.home");
@@ -62,7 +62,7 @@ public class ConfuzzionMain {
                 main_loop_iterations = Long.parseLong(line.getOptionValue("i"));
             }
             if (line.hasOption("t")) {
-                timeout = Integer.parseInt(line.getOptionValue("t"));
+                timeout = Long.parseLong(line.getOptionValue("t"));
             }
             if (line.hasOption("l")) {
                 stackLimit = Integer.parseInt(line.getOptionValue("l"));
@@ -213,7 +213,7 @@ public class ConfuzzionMain {
         }
     }
 
-    public void startMutation(long mainloop_turn, int timeout, int stackLimit, boolean withJVM, String javahome, Path seedFile) {
+    public void startMutation(long mainloop_turn, long timeout, int stackLimit, boolean withJVM, String javahome, Path seedFile) {
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
         logger.info("Soot Class Path: {}", Scene.v().getSootClassPath());
