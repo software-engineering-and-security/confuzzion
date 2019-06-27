@@ -100,7 +100,7 @@ public class StatusScreen extends TimerTask {
     public String toString() {
         totalMutations += mutationsFromLastSecond;
         totalExecutions += executionsFromLastSecond;
-        if (executionsFromLastSecond == 0) {
+        if (mutationsFromLastSecond == 0) {
             stalled = true;
         }
         time++;
