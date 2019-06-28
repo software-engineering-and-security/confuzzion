@@ -252,6 +252,7 @@ public class ConfuzzionMain {
             String seedName = seedFile.getFileName().toString();
             seedName = seedName.substring(0, seedName.lastIndexOf("."));
             Mutant seedMutant = Mutant.loadClass(seedName);
+            seedMutant.fixClass();
             currentProg = new Program(rand, seedMutant);
             if (logger.isDebugEnabled()) {
                 logger.debug(seedMutant.toString());
@@ -277,6 +278,7 @@ public class ConfuzzionMain {
 
                     logger.info("Loading class {}", filename);
                     Mutant mut = Mutant.loadClass(filename);
+                    mut.fixClass();
                     currentProg.insertSeedDependency(mut);
                     if (logger.isDebugEnabled()) {
                         logger.debug(mut.toString());

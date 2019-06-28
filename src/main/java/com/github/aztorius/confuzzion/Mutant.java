@@ -4,11 +4,15 @@ import soot.Printer;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Type;
 import soot.Unit;
+import soot.VoidType;
 import soot.baf.BafASMBackend;
 import soot.jimple.AssignStmt;
 import soot.jimple.CastExpr;
 import soot.jimple.JasminClass;
+import soot.jimple.Jimple;
+import soot.jimple.JimpleBody;
 import soot.util.JasminOutputStream;
 
 import java.io.ByteArrayOutputStream;
@@ -19,8 +23,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -169,5 +175,16 @@ public class Mutant {
         }
         sClass.validate();
         return new Mutant(sClass);
+    }
+
+    public void fixClass() {
+        // Add method <clinit> if missing
+        if (sClass.getMethodByNameUnsafe("<clinit>") == null) {
+            SootMethod clinit = new SootMethod("<clinit>", new ArrayList<Type>(), VoidType.v(), Modifier.STATIC | Modifier.PUBLIC);
+            JimpleBody body = Jimple.v().newBody(clinit);
+            body.getUnits().add(Jimple.v().newReturnVoidStmt());
+            clinit.setActiveBody(body);
+            sClass.addMethod(clinit);
+        }
     }
 }
