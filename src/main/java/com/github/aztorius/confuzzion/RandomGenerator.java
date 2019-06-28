@@ -304,7 +304,7 @@ public class RandomGenerator {
      * @return           random type
      */
     public Type randType(String className, Boolean canBeVoid) {
-        if (rand.nextBoolean() && canBeVoid) {
+        if (canBeVoid && rand.nextBoolean()) {
             return VoidType.v();
         } else if (rand.nextBoolean()) {
             return this.randPrimType();
