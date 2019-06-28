@@ -1,5 +1,7 @@
 package com.github.aztorius.confuzzion;
 
+import soot.Scene;
+
 public class AddClassMutation extends ProgramMutation {
     private Mutant addedClass;
 
@@ -12,6 +14,7 @@ public class AddClassMutation extends ProgramMutation {
     @Override
     public void undo() {
         this.program.removeClass(addedClass);
+        Scene.v().removeClass(addedClass.getSootClass());
     }
 
     @Override
