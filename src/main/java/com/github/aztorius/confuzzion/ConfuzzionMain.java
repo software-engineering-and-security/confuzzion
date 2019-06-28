@@ -74,12 +74,16 @@ public class ConfuzzionMain {
             if (line.hasOption("s")) {
                 seedFile = Paths.get(line.getOptionValue("s"));
             }
-            if (line.hasOption("jversion")) {
+            if (line.hasOption("java-version")) {
                 // soot.options.Options java_version corresponds to java_version + 1
                 ConfuzzionOptions.v().java_version = Integer.parseInt(line.getOptionValue("java-version")) + 1;
             }
+            if (line.hasOption("classes-limit")) {
+                ConfuzzionOptions.v().class_number_limit = Integer.parseInt(line.getOptionValue("classes-limit"));
+            }
             ConfuzzionOptions.v().use_jasmin_backend = line.hasOption("jasmin");
-            ConfuzzionOptions.v().allow_unsafe_assignment = line.hasOption("uassign");
+            ConfuzzionOptions.v().allow_unsafe_assignment = line.hasOption("unsafe-assignment");
+            ConfuzzionOptions.v().fixed_number_of_classes = !line.hasOption("one-class");
 
             if (!Files.exists(resultFolder)) {
                 Files.createDirectories(resultFolder);
@@ -124,7 +128,7 @@ public class ConfuzzionMain {
                 .required(false)
                 .build();
 
-        final Option runnerOption = Option.builder("threads")
+        final Option runnerOption = Option.builder()
                 .longOpt("threads")
                 .desc("Use threads in spite of JVM to run programs")
                 .hasArg(false)
@@ -155,13 +159,14 @@ public class ConfuzzionMain {
                 .required(false)
                 .build();
 
-        final Option jasminOption = Option.builder("jasmin")
+        final Option jasminOption = Option.builder()
+                .longOpt("jasmin")
                 .desc("Use Jasmin backend instead of ASM")
                 .hasArg(false)
                 .required(false)
                 .build();
 
-        final Option javaVersionOption = Option.builder("jversion")
+        final Option javaVersionOption = Option.builder()
                 .longOpt("java-version")
                 .desc("Force Java version of output bytecode to : 1-9")
                 .hasArg(true)
@@ -169,9 +174,24 @@ public class ConfuzzionMain {
                 .required(false)
                 .build();
 
-        final Option unsafeAssignment = Option.builder("uassign")
+        final Option unsafeAssignment = Option.builder()
                 .longOpt("unsafe-assignment")
                 .desc("Allow unsafe assignment in bytecode without checkcast")
+                .hasArg(false)
+                .required(false)
+                .build();
+
+        final Option classNumberOption = Option.builder()
+                .longOpt("classes-limit")
+                .desc("Max number of classes to create for the program / default 3")
+                .hasArg(true)
+                .argName("number-of-classes")
+                .required(false)
+                .build();
+
+        final Option startWithOneClass = Option.builder()
+                .longOpt("one-class")
+                .desc("Start with only one class. Else immediately creates the max number of classes.")
                 .hasArg(false)
                 .required(false)
                 .build();
@@ -195,6 +215,8 @@ public class ConfuzzionMain {
         options.addOption(jasminOption);
         options.addOption(javaVersionOption);
         options.addOption(unsafeAssignment);
+        options.addOption(classNumberOption);
+        options.addOption(startWithOneClass);
         options.addOption(helpOption);
 
         return options;
@@ -265,7 +287,14 @@ public class ConfuzzionMain {
             currentProg = new Program(rand, "Test");
         }
 
-        ArrayList<Contract> contracts = new ArrayList<Contract>();
+        if (ConfuzzionOptions.v().fixed_number_of_classes) {
+            // Generate new classes (with java.lang.Object as super type) until class_number_limit is reached
+            for (int i = 1; i < ConfuzzionOptions.v().class_number_limit; i++) {
+                currentProg.genNewClass(true);
+            }
+        } //else: classes are added with AddClassMutation with any super type
+
+        ArrayList<Contract> contracts = new ArrayList<Contract>(1);
         contracts.add(new ContractTypeConfusion());
         Stack<Mutation> mutationsStack = new Stack<Mutation>();
 

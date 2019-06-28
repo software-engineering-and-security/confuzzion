@@ -25,7 +25,6 @@ public class Program {
     private HashSet<SootMethod> executedMethods;
     private RandomGenerator rand;
 
-    private static long MUTANTS_NUMBER_LIMIT = 10;
     private static final Logger logger = LoggerFactory.getLogger(Program.class);
 
     class Handler implements UncaughtExceptionHandler {
@@ -114,13 +113,18 @@ public class Program {
         startIndex++;
     }
 
-    public Mutant genNewClass() {
+    /**
+     * Generate and add a new SootClass
+     * @param  superTypeObject force java.lang.Object as super type, else use any other type
+     * @return
+     */
+    public Mutant genNewClass(boolean superTypeObject) {
         String className = classBaseName + mutants.size();
         MutantGenerator generator = new MutantGenerator(rand, className);
         rand.addStrMutant(className);
-        String superClass = rand.randClassName(className, false);
-        if (rand.nextBoolean()) {
-            superClass = "java.lang.Object";
+        String superClass = "java.lang.Object";
+        if (!superTypeObject && rand.nextBoolean()) {
+            superClass = rand.randClassName(className, false);
         }
         Mutant addedMutant = generator.genEmptyClass(superClass);
         this.mutants.add(addedMutant);
@@ -285,9 +289,9 @@ public class Program {
      */
     public Mutation randomMutation() throws MutationException {
         Mutation mutation = null;
-        switch (rand.randLimits(0.02, 0.05, 1.0)) {
+        switch (rand.randLimits(0.01, 0.1, 1.0)) {
         case 0: // Program level mutation
-            if (mutants.size() < Program.MUTANTS_NUMBER_LIMIT) {
+            if (mutants.size() < ConfuzzionOptions.v().class_number_limit) {
                 mutation = this.randomProgramMutation();
                 break;
             }

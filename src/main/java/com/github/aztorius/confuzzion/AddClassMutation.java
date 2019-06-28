@@ -8,7 +8,7 @@ public class AddClassMutation extends ProgramMutation {
     public AddClassMutation(RandomGenerator rand, Program program) {
         super(rand, program);
 
-        addedClass = this.program.genNewClass();
+        addedClass = this.program.genNewClass(false);
     }
 
     @Override
