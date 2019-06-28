@@ -18,20 +18,14 @@ public class AssignMutation extends MethodMutation {
             throw new MutationException(AssignMutation.class,
                 "No local inside body.");
         }
-        Local localBefore = rand.randLocalRef(body.getLocals());
+        Local localBefore = rand.randLocalRef(body.getLocals(), false);
         if (localBefore == null) {
             throw new MutationException(AssignMutation.class,
-                "No reference inside body.");
+                "No useful reference inside body.");
         }
         Type typeBefore = localBefore.getType();
-        Type typeAfter = null;
-        if (rand.nextBoolean()) {
-            // Pick a type from RandomGenerator
-            typeAfter = rand.randRefType(method.getDeclaringClass().getName());
-        } else {
-            // Pick a type from locals
-            typeAfter = rand.randLocalRef(body.getLocals()).getType();
-        }
+        // Pick a type from RandomGenerator
+        Type typeAfter = rand.randRefType(method.getDeclaringClass().getName());
         if (!allow_unsafe_assignment || rand.nextBoolean()) {
             // Do a valid assignment to a common parent class
             typeAfter = typeBefore.merge(typeAfter, Scene.v());

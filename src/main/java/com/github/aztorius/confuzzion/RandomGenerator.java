@@ -385,15 +385,20 @@ public class RandomGenerator {
     }
 
     /**
-     * Randomly choose a local of type RefType from a Chain<Local>
+     * Randomly choose a local of type RefType that is a Mutant class or a target class
      * @param  locals chain of locals
-     * @return        reference to a Local of type RefType
+     * @param  canBeAnyRefType if true then can return any RefType Local provided, not only a target class or Mutant class type
+     * @return Local of type RefType
      */
-    public Local randLocalRef(Chain<Local> locals) {
-        ArrayList<Local> localRefs = new ArrayList<Local>();
+    public Local randLocalRef(Chain<Local> locals, boolean canBeAnyRefType) {
+        ArrayList<Local> localRefs = new ArrayList<Local>(10);
         for (Local loc : locals) {
-            if (loc.getType() instanceof RefType) {
-                localRefs.add(loc);
+            Type type = loc.getType();
+            if (type instanceof RefType) {
+                String className = ((RefType)type).getClassName();
+                if (canBeAnyRefType || strClasses.contains(className) || strMutants.contains(className)) {
+                    localRefs.add(loc);
+                }
             }
         }
         if (localRefs.size() <= 0) {

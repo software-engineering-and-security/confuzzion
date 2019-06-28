@@ -25,7 +25,7 @@ public class CallMethodMutation extends MethodMutation {
         initializeMutation = null;
 
         Body body = method.getActiveBody();
-        Local local = rand.randLocalRef(body.getLocals());
+        Local local = rand.randLocalRef(body.getLocals(), false);
         if (local == null) {
             local = Jimple.v().newLocal("local" + rand.nextIncrement(), rand.randRefType(method.getDeclaringClass().getName()));
             mutation.addLocal(local);
