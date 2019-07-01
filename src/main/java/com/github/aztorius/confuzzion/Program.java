@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 public class Program {
     private String classBaseName;
     private ArrayList<Mutant> mutants;
-    private int startIndex;
     private HashSet<SootMethod> executedMethods;
     private RandomGenerator rand;
 
@@ -77,40 +76,26 @@ public class Program {
      * Program constructor
      * @param rand          the RandomGenerator that will be used
      * @param classBaseName the base name of all classes inside this program
+     * @param createFirstMutant create a mutant and add it
      */
-    public Program(RandomGenerator rand, String classBaseName) {
+    public Program(RandomGenerator rand, String classBaseName, boolean createFirstMutant) {
         this.classBaseName = classBaseName;
         this.rand = rand;
         mutants = new ArrayList<Mutant>();
         executedMethods = new HashSet<SootMethod>();
-        startIndex = 0;
 
-        // Create first empty Mutant (main class)
-        MutantGenerator generator = new MutantGenerator(rand, classBaseName + "0");
-        Mutant firstMutant = generator.genEmptyClass("java.lang.Object");
-        mutants.add(firstMutant);
-        rand.addStrMutant(firstMutant.getClassName());
+        if (createFirstMutant) {
+            // Create first empty Mutant (main class)
+            MutantGenerator generator = new MutantGenerator(rand, classBaseName + "0");
+            Mutant firstMutant = generator.genEmptyClass("java.lang.Object");
+            mutants.add(firstMutant);
+            rand.addStrMutant(firstMutant.getClassName());
+        }
     }
 
-    /**
-     * Program constructor with a specific seed class
-     * @param rand
-     * @param seedMutant first Mutant to use
-     */
-    public Program(RandomGenerator rand, Mutant seedMutant) {
-        this.classBaseName = seedMutant.getClassName() + "Test";
-        this.rand = rand;
-        mutants = new ArrayList<Mutant>();
-        executedMethods = new HashSet<SootMethod>();
-        startIndex = 0;
-
-        mutants.add(seedMutant);
-        rand.addStrMutant(seedMutant.getClassName());
-    }
-
-    public void insertSeedDependency(Mutant seedDependency) {
-        mutants.add(0, seedDependency);
-        startIndex++;
+    public void addMutant(Mutant newMutant) {
+        mutants.add(newMutant);
+        rand.addStrMutant(newMutant.getClassName());
     }
 
     /**
@@ -192,6 +177,16 @@ public class Program {
         return bodyMutation;
     }
 
+    public ArrayList<BodyMutation> addContractCheckAllBodies(Contract contract) {
+        ArrayList<BodyMutation> mutations = new ArrayList<BodyMutation>(10);
+        for (Mutant mut : mutants) {
+            for (SootMethod m : mut.getSootClass().getMethods()) {
+                mutations.add(contract.applyCheck(m.getActiveBody()));
+            }
+        }
+        return mutations;
+    }
+
     public void removeContractCheck(BodyMutation mutation) {
         mutation.undo();
     }
@@ -253,7 +248,7 @@ public class Program {
     private ClassMutation randomClassMutation(SootClass sootClass)
             throws MutationException {
         ClassMutation mutation = null;
-        switch (rand.randLimits(0.5, 1.0)) {
+        switch (rand.randLimits(0.8, 1.0)) {
         case 0:
             mutation = new AddFieldMutation(rand, sootClass);
             break;
@@ -318,14 +313,8 @@ public class Program {
     public void genAndLaunch(long timeout) throws Throwable {
         ByteClassLoader loader =
                 new ByteClassLoader(Thread.currentThread().getContextClassLoader());
-        // Load dependencies
-        for (int i = 0; i < startIndex; i++) {
-            Mutant mut = mutants.get(i);
-            byte[] array = mut.toClass();
-            loader.load(mut.getClassName(), array);
-        }
         // Load and instantiate (call <init>) all other mutants
-        for (int i = mutants.size() - 1; i >= startIndex; i--) {
+        for (int i = mutants.size() - 1; i >= 0; i--) {
             Mutant mut = mutants.get(i);
             if (logger.isDebugEnabled()) {
                 logger.debug("===Class {}{}===", classBaseName, i);
@@ -357,7 +346,7 @@ public class Program {
     public void genAndLaunchWithJVM(String javahome, String folder, long timeout) throws Throwable {
         this.saveAsClassFiles(folder);
         MutantGenerator gen = new MutantGenerator(rand, "Main");
-        Mutant mut = gen.genMainLoader(mutants.subList(startIndex, mutants.size()));
+        Mutant mut = gen.genMainLoader(mutants);
         mut.toClassFile(folder);
         Util.startJVM(javahome, folder, mut.getClassName(), timeout);
     }

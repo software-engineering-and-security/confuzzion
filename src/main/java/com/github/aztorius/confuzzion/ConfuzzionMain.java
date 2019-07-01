@@ -153,7 +153,7 @@ public class ConfuzzionMain {
 
         final Option seedOption = Option.builder("s")
                 .longOpt("seed")
-                .desc("Seed file to start mutations from")
+                .desc("Seed folder where all jimple and class files are loaded before starting mutations")
                 .hasArg(true)
                 .argName("seed")
                 .required(false)
@@ -235,7 +235,7 @@ public class ConfuzzionMain {
         }
     }
 
-    public void startMutation(long mainloop_turn, long timeout, int stackLimit, boolean withJVM, String javahome, Path seedFile) {
+    public void startMutation(long mainloop_turn, long timeout, int stackLimit, boolean withJVM, String javahome, Path seedFolder) {
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
         logger.info("Soot Class Path: {}", Scene.v().getSootClassPath());
@@ -245,18 +245,11 @@ public class ConfuzzionMain {
         RandomGenerator rand = new RandomGenerator();
 
         Program currentProg = null;
-        if (seedFile != null) {
-            logger.info("Seed file: {}", seedFile);
-            Path seedFolder = seedFile.getParent().toAbsolutePath().normalize();
+        if (seedFolder != null) {
+            logger.info("Seed folder: {}", seedFolder);
             Scene.v().extendSootClassPath(seedFolder.toString());
-            String seedName = seedFile.getFileName().toString();
-            seedName = seedName.substring(0, seedName.lastIndexOf("."));
-            Mutant seedMutant = Mutant.loadClass(seedName);
-            seedMutant.fixClass();
-            currentProg = new Program(rand, seedMutant);
-            if (logger.isDebugEnabled()) {
-                logger.debug(seedMutant.toString());
-            }
+            currentProg = new Program(rand, "Test", false);
+
             // Load all classes (.jimple/.class) in folder except the seed
             File folderFile = seedFolder.toFile();
             File[] listFiles = folderFile.listFiles();
@@ -271,22 +264,43 @@ public class ConfuzzionMain {
                         continue;
                     }
 
-                    if (filename.equals(seedName)) {
-                        // Same class, do not reload
-                        continue;
-                    }
-
                     logger.info("Loading class {}", filename);
                     Mutant mut = Mutant.loadClass(filename);
                     mut.fixClass();
-                    currentProg.insertSeedDependency(mut);
+                    currentProg.addMutant(mut);
                     if (logger.isDebugEnabled()) {
                         logger.debug(mut.toString());
                     }
                 }
             }
+
+            // Check all bodies for type confusion
+            ArrayList<BodyMutation> bodyMutations = currentProg.addContractCheckAllBodies(new ContractTypeConfusion());
+            Path tmpFolder = Paths.get(resultFolder.toAbsolutePath().toString(), "seed");
+            try {
+                // Instantiation and launch
+                if (withJVM) {
+                    try {
+                        Files.createDirectories(tmpFolder);
+                    } catch(IOException e2) {
+                        logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
+                        return;
+                    }
+                    currentProg.genAndLaunchWithJVM(javahome, tmpFolder.toString(), timeout);
+                } else { //with threads
+                    currentProg.genAndLaunch(timeout);
+                }
+                currentProg.removeContractsChecks(bodyMutations);
+            } catch(ContractCheckException e) {
+                logger.error("Seed already contains a contract check failure", e);
+                currentProg.saveAsJimpleFiles(tmpFolder.toString());
+                return;
+            } catch(Throwable e) {
+                logger.error("Error while using seed for the first time", e);
+                return;
+            }
         } else {
-            currentProg = new Program(rand, "Test");
+            currentProg = new Program(rand, "Test", true);
         }
 
         if (ConfuzzionOptions.v().fixed_number_of_classes) {
