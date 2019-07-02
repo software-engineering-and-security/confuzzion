@@ -19,7 +19,7 @@ public class AddLocalMutation extends MethodMutation {
      * @param method the method where to add a local
      */
     public AddLocalMutation(RandomGenerator rand, SootMethod method) {
-        this(rand, method, rand.randType(method.getDeclaringClass().getName(), false));
+        this(rand, method, rand.randType(method.getDeclaringClass().getName(), false, false));
     }
 
     /**

@@ -15,8 +15,8 @@ public class AddFieldMutation extends ClassMutation {
 
         String name = "field" + rand.nextIncrement();
 
-        // Type can be a primitive type or a reference type
-        Type type = rand.randType(sootClass.getName(), false);
+        // Type can be a reference type
+        Type type = rand.randType(sootClass.getName(), false, false);
         int modifiers = rand.randModifiers(true, true);
         this.addedField = new SootField(name, type, modifiers);
         sootClass.addField(this.addedField);

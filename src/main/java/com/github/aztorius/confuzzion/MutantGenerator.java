@@ -270,10 +270,10 @@ public class MutantGenerator {
         ArrayList<Type> parameterTypes = new ArrayList<Type>();
         int numParams = rand.nextUint(MutantGenerator.MAX_PARAMETERS);
         for (int i = 0; i < numParams; i++) {
-            parameterTypes.add(rand.randType(sClass.getName(), false));
+            parameterTypes.add(rand.randType(sClass.getName(), false, true));
         }
 
-        Type returnType = rand.randType(sClass.getName(), true);
+        Type returnType = rand.randType(sClass.getName(), true, true);
         int modifiers = rand.randModifiers(true, false);
 
         this.addMethod(name, parameterTypes, returnType, modifiers, true);

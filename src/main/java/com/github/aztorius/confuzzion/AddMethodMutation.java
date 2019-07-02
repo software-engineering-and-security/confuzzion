@@ -23,7 +23,7 @@ public class AddMethodMutation extends ClassMutation {
                 sootClass,
                 "method" + rand.nextIncrement(),
                 rand.randTypes(sootClass.getName(), AddMethodMutation.MAX_PARAMETERS),
-                rand.randType(sootClass.getName(), true),
+                rand.randType(sootClass.getName(), true, true),
                 rand.randModifiers(true, false));
     }
 

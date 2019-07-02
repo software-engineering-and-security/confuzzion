@@ -301,12 +301,13 @@ public class RandomGenerator {
      * Randomly choose a type between VoidType, RefType and PrimType
      * @param  className current class name
      * @param  canBeVoid if true result may be VoidType
+     * @param  canBePrimitive if true result may be PrimType
      * @return           random type
      */
-    public Type randType(String className, Boolean canBeVoid) {
+    public Type randType(String className, boolean canBeVoid, boolean canBePrimitive) {
         if (canBeVoid && rand.nextBoolean()) {
             return VoidType.v();
-        } else if (rand.nextBoolean()) {
+        } else if (canBePrimitive && rand.nextBoolean()) {
             return this.randPrimType();
         } else {
             return this.randRefType(className);
@@ -322,7 +323,7 @@ public class RandomGenerator {
     public List<Type> randTypes(String className, int number) {
         ArrayList<Type> types = new ArrayList<Type>(number);
         for (int i = 0; i < number; i++) {
-            types.add(this.randType(className, false));
+            types.add(this.randType(className, false, true));
         }
         return types;
     }
