@@ -3,7 +3,9 @@ package com.github.aztorius.confuzzion;
 import soot.Body;
 import soot.Local;
 import soot.Unit;
+import soot.UnitPatchingChain;
 import soot.ValueBox;
+import soot.util.Chain;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,12 +24,16 @@ public class BodyMutation {
     }
 
     public void undo() {
+        Chain<Local> locals = this.body.getLocals();
         for (Local local : addedLocals) {
-            this.body.getLocals().remove(local);
+            locals.remove(local);
         }
+        addedLocals.clear();
+        UnitPatchingChain units = this.body.getUnits();
         for (Unit unit : addedUnits) {
-            this.body.getUnits().remove(unit);
+            units.remove(unit);
         }
+        addedUnits.clear();
     }
 
     public void addLocal(Local local) {
