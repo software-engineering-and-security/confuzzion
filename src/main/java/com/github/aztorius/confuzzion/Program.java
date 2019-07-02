@@ -248,7 +248,7 @@ public class Program {
     private ClassMutation randomClassMutation(SootClass sootClass)
             throws MutationException {
         ClassMutation mutation = null;
-        switch (rand.randLimits(0.8, 1.0)) {
+        switch (rand.randLimits(0.9, 1.0)) {
         case 0:
             mutation = new AddFieldMutation(rand, sootClass);
             break;
@@ -284,7 +284,7 @@ public class Program {
      */
     public Mutation randomMutation() throws MutationException {
         Mutation mutation = null;
-        switch (rand.randLimits(0.01, 0.1, 1.0)) {
+        switch (rand.randLimits(0.01, 0.2, 1.0)) {
         case 0: // Program level mutation
             if (mutants.size() < ConfuzzionOptions.v().class_number_limit) {
                 mutation = this.randomProgramMutation();
