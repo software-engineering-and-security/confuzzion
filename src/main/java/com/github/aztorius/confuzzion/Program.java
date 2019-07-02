@@ -248,7 +248,7 @@ public class Program {
     private ClassMutation randomClassMutation(SootClass sootClass)
             throws MutationException {
         ClassMutation mutation = null;
-        switch (rand.randLimits(0.9, 1.0)) {
+        switch (rand.randLimits(0.999, 1.0)) {
         case 0:
             mutation = new AddFieldMutation(rand, sootClass);
             break;
