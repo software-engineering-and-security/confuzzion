@@ -25,7 +25,7 @@ import org.apache.commons.cli.ParseException;
 public class ConfuzzionMain {
     private Path resultFolder;
 
-    private static final long MAIN_LOOP_ITERATIONS = 1000;
+    private static final long MAIN_LOOP_ITERATIONS = -1; // no limit
     private static final long TIMEOUT = 1000L;
     private static final int STACK_LIMIT = Integer.MAX_VALUE;
     private static final boolean WITH_JVM = true;
@@ -114,7 +114,7 @@ public class ConfuzzionMain {
 
         final Option iterationsOption = Option.builder("i")
                 .longOpt("iterations")
-                .desc("Main loop iterations / -1 by default")
+                .desc("Main loop iterations / -1 no limit by default")
                 .hasArg(true)
                 .argName("iterations")
                 .required(false)
