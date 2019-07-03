@@ -98,6 +98,10 @@ public class Program {
         rand.addStrMutant(newMutant.getClassName());
     }
 
+    public int getNumberOfMutants() {
+        return mutants.size();
+    }
+
     /**
      * Generate and add a new SootClass
      * @param  superTypeObject force java.lang.Object as super type, else use any other type

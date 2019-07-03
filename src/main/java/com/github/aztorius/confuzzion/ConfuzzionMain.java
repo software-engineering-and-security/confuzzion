@@ -305,7 +305,7 @@ public class ConfuzzionMain {
 
         if (ConfuzzionOptions.v().fixed_number_of_classes) {
             // Generate new classes (with java.lang.Object as super type) until class_number_limit is reached
-            for (int i = 1; i < ConfuzzionOptions.v().class_number_limit; i++) {
+            for (int i = currentProg.getNumberOfMutants(); i < ConfuzzionOptions.v().class_number_limit; i++) {
                 currentProg.genNewClass(true);
             }
         } //else: classes are added with AddClassMutation with any super type
