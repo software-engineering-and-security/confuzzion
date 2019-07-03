@@ -369,6 +369,14 @@ public class ConfuzzionMain {
                 Throwable cause = Util.getCause(e);
                 if (cause instanceof ContractCheckException) {
                     keepFolder = true;
+                    if (!withJVM) {
+                        try {
+                            Files.createDirectories(folder);
+                        } catch(IOException e2) {
+                            logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
+                            break;
+                        }
+                    }
                     // Save current classes also as jimple files
                     currentProg.saveAsJimpleFiles(folder.toString());
                     // Update status screen

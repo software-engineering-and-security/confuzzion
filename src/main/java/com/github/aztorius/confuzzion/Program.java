@@ -321,7 +321,7 @@ public class Program {
         for (int i = mutants.size() - 1; i >= 0; i--) {
             Mutant mut = mutants.get(i);
             if (logger.isDebugEnabled()) {
-                logger.debug("===Class {}{}===", classBaseName, i);
+                logger.debug("===Class {}===", mut.getClassName());
                 logger.debug(mut.toString());
             }
             byte[] array = mut.toClass();
