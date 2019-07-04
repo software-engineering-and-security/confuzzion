@@ -318,6 +318,7 @@ public class ConfuzzionMain {
         Timer timer = new Timer();
         StatusScreen statusScreen = new StatusScreen();
         timer.schedule(statusScreen, 0, 1000);
+        final long startTime = System.nanoTime();
 
         for (long loop1 = 0; loop1 < mainloop_turn || mainloop_turn < 0; loop1++) {
             Mutation mutation = null;
@@ -336,6 +337,9 @@ public class ConfuzzionMain {
             }
 
             logger.info("Mutation: {}", mutation.getClass().toString());
+            if (logger.isDebugEnabled()) {
+                logger.debug(currentProg.toString());
+            }
 
             // Add contracts checks
             ArrayList<BodyMutation> contractsMutations =
@@ -379,6 +383,15 @@ public class ConfuzzionMain {
                     }
                     // Save current classes also as jimple files
                     currentProg.saveAsJimpleFiles(folder.toString());
+                    // Save stats to stats.txt
+                    String statsFile = Paths.get(folder.toString(), "stats.txt").toString();
+                    String content = String.format("Found violation in %l ns\nStacked mutations: %i", System.nanoTime() - startTime, mutationsStack.size());
+                    logger.info(content);
+                    try {
+                        Util.writeToFile(statsFile, content);
+                    } catch (IOException e1) {
+                        logger.error("Writing file {}", statsFile, e1);
+                    }
                     // Update status screen
                     statusScreen.newMutation(mutation.getClass(), Status.VIOLATES, 1);
                 } else if (cause instanceof InterruptedException) {
