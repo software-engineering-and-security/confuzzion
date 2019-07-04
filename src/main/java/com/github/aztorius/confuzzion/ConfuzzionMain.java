@@ -222,19 +222,6 @@ public class ConfuzzionMain {
         return options;
     }
 
-    public void startGeneration(long mainloop_turn) {
-        RandomGenerator rand = new RandomGenerator();
-        MutantGenerator generator = new MutantGenerator(rand, "Test");
-        ArrayList<Contract> contracts = new ArrayList<Contract>();
-        contracts.add(new ContractTypeConfusion());
-
-        for (long loop1 = 0; loop1 < mainloop_turn; loop1++) {
-            logger.info("===Loop {}===", loop1);
-            generator.generate("java.lang.Object");
-            generator.addContractsChecks(contracts);
-        }
-    }
-
     public void startMutation(long mainloop_turn, long timeout, int stackLimit, boolean withJVM, String javahome, Path seedFolder) {
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());

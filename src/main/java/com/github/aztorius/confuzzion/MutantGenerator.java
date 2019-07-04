@@ -30,10 +30,6 @@ public class MutantGenerator {
     private SootClass sClass;
     private int counter;
 
-    private static int MAX_FIELDS = 20;
-    private static int MAX_METHODS = 20;
-    private static int MAX_PARAMETERS = 3;
-    private static int MAX_STATEMENTS = 10;
     private static final Logger logger = LoggerFactory.getLogger(MutantGenerator.class);
 
     public MutantGenerator(RandomGenerator rand, String className) {
@@ -106,41 +102,13 @@ public class MutantGenerator {
         //Constructors
         this.genConstructor(superClass);
         //Override methods
-        this.genOverrideMethods(false);
+        this.genOverrideMethods();
 
-        return new Mutant(sClass);
-    }
-
-    public Mutant generate(String superClass) {
-        //Class
-        this.setSuperClass(superClass);
-        //Fields
-        this.genFields();
-        //Methods
-        this.genMethods();
-        //Constructors
-        this.genConstructor(superClass);
-        //Override methods
-        this.genOverrideMethods(true);
-
-        return new Mutant(sClass);
-    }
-
-    public Mutant addContractsChecks(ArrayList<Contract> contracts) {
-        //For each Contract, apply all necessary checks on all methods
-        //As we are a generator we don't need to revert mutations caused
-        //by the contract check.
-        for (Contract contract : contracts) {
-            for (SootMethod method : sClass.getMethods()) {
-                contract.applyCheck(method.getActiveBody());
-            }
-        }
         return new Mutant(sClass);
     }
 
     private int nextInt() {
-        counter = counter + 1;
-        return counter;
+        return ++counter;
     }
 
     private void genConstructor(String superClass) {
@@ -239,7 +207,7 @@ public class MutantGenerator {
         body.getUnits().add(Jimple.v().newReturnVoidStmt());
     }
 
-    private void genOverrideMethods(boolean genStatements) {
+    private void genOverrideMethods() {
         SootClass superClass = sClass.getSuperclass();
         for (SootMethod method : superClass.getMethods()) {
             if (method.isAbstract() && !method.isConstructor()) {
@@ -249,7 +217,7 @@ public class MutantGenerator {
                     if (Modifier.isAbstract(modifiers)) {
                         modifiers -= Modifier.ABSTRACT;
                     }
-                    this.addMethod(method.getName(), method.getParameterTypes(), method.getReturnType(), modifiers, genStatements);
+                    this.addMethod(method.getName(), method.getParameterTypes(), method.getReturnType(), modifiers);
                 }
             }
         }
@@ -262,24 +230,10 @@ public class MutantGenerator {
         parameterTypes.add(stringClass.getType().makeArrayType());
         Type returnType = VoidType.v();
         int modifiers = Modifier.PUBLIC + Modifier.STATIC;
-        return this.addMethod(name, parameterTypes, returnType, modifiers, false);
+        return this.addMethod(name, parameterTypes, returnType, modifiers);
     }
 
-    private void genMethod() {
-        String name = "method" + this.nextInt();
-        ArrayList<Type> parameterTypes = new ArrayList<Type>();
-        int numParams = rand.nextUint(MutantGenerator.MAX_PARAMETERS);
-        for (int i = 0; i < numParams; i++) {
-            parameterTypes.add(rand.randType(sClass.getName(), false, true));
-        }
-
-        Type returnType = rand.randType(sClass.getName(), true, true);
-        int modifiers = rand.randModifiers(true, false);
-
-        this.addMethod(name, parameterTypes, returnType, modifiers, true);
-    }
-
-    private SootMethod addMethod(String name, List<Type> parameterTypes, Type returnType, int modifiers, boolean genStatements) {
+    private SootMethod addMethod(String name, List<Type> parameterTypes, Type returnType, int modifiers) {
         SootMethod method =
             new SootMethod(name,
                            parameterTypes,
@@ -293,8 +247,7 @@ public class MutantGenerator {
         this.genBody(body,
                      returnType,
                      parameterTypes,
-                     Modifier.isStatic(modifiers),
-                     genStatements);
+                     Modifier.isStatic(modifiers));
         return method;
     }
 
@@ -374,8 +327,7 @@ public class MutantGenerator {
     private void genBody(JimpleBody body,
                          Type returnType,
                          List<Type> params,
-                         Boolean isStatic,
-                         Boolean genStatements) {
+                         Boolean isStatic) {
         Chain<Local> locals = body.getLocals();
         UnitPatchingChain units = body.getUnits();
 
@@ -394,67 +346,6 @@ public class MutantGenerator {
             units.add(
                 Jimple.v().newIdentityStmt(paramLocal,
                                            Jimple.v().newParameterRef(params.get(i), i)));
-        }
-
-        if (genStatements) {
-         // Add random statements
-            int nbStatements = rand.nextUint(MutantGenerator.MAX_STATEMENTS);
-            for (int i = 0; i < nbStatements; i++) {
-                switch (rand.nextUint(3)) {
-                    case 0: //Constructor call
-                        String className = rand.getClassName();
-                        this.genObject(body, className);
-                        break;
-                    case 1: //Method call on a local
-                        if (locals.size() <= 0) {
-                            break;
-                        }
-                        Local locSel = null;
-                        int localSel = rand.nextUint(locals.size());
-                        for (Local loc : locals) {
-                            if (localSel > 0) {
-                                localSel--;
-                            } else {
-                                locSel = loc;
-                                break;
-                            }
-                        }
-                        Type type = locSel.getType();
-                        if (type instanceof RefType) {
-                            RefType refType = (RefType)type;
-                            List<SootMethod> methods = refType.getSootClass().getMethods();
-                            if (methods.size() == 0) {
-                                break;
-                            }
-                            int methodSel = rand.nextUint(methods.size());
-                            SootMethod method = methods.get(methodSel);
-                            if (method.isConstructor() || !method.isPublic()) {
-                                // We should not call the constructor twice !
-                                // nor call a non-Public method
-                                break;
-                            }
-
-                            // Call method
-                            this.genMethodCall(body, locSel, method);
-                        }
-                        break;
-                    default: //Cast
-                        Local loc1 = rand.randLocal(locals);
-                        if (loc1 == null) {
-                            continue;
-                        } else if (!(loc1.getType() instanceof RefType)) {
-                            continue;
-                        }
-                        //TODO; cast to other types
-                        Local loc2 = Jimple.v().newLocal("local" + this.nextInt(),
-                            loc1.getType());
-                        locals.add(loc2);
-                        units.add(
-                            Jimple.v().newAssignStmt(loc2,
-                                Jimple.v().newCastExpr(loc1, loc2.getType())));
-                        //TODO: catch exception if cast should not work
-                }
-            }
         }
 
         if (returnType == VoidType.v()) {
@@ -637,30 +528,4 @@ public class MutantGenerator {
         }
     }
 
-    private void genMethods() {
-        int count = rand.nextUint(MutantGenerator.MAX_METHODS);
-        for (int i = 0; i < count; i++) {
-            this.genMethod();
-        }
-    }
-
-    private void genField() {
-        String name = "field" + this.nextInt();
-        // Type can be a primitive type...
-        Type type = rand.randPrimType();
-        // ...or a target object
-        if (rand.nextBoolean()) {
-            SootClass clazz = Util.getOrLoadSootClass(rand.getClassName());
-            type = clazz.getType();
-        }
-        int modifiers = rand.randModifiers(true, true);
-        sClass.addField(new SootField(name, type, modifiers));
-    }
-
-    private void genFields() {
-        int count = rand.nextUint(MutantGenerator.MAX_FIELDS);
-        for (int i = 0; i < count; i++) {
-            this.genField();
-        }
-    }
 }
