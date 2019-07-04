@@ -31,7 +31,7 @@ public class BodyMutation {
         addedLocals.clear();
         UnitPatchingChain units = this.body.getUnits();
         for (Unit unit : addedUnits) {
-            units.remove(unit);
+            units.getNonPatchingChain().remove(unit);
         }
         addedUnits.clear();
     }
@@ -47,7 +47,7 @@ public class BodyMutation {
 
     public void addUnitBefore(Unit toInsert, Unit point) {
         this.addedUnits.add(toInsert);
-        body.getUnits().insertBefore(toInsert, point);
+        body.getUnits().getNonPatchingChain().insertBefore(toInsert, point);
     }
 
     public void addUnitAfter(Unit toInsert, Unit point) {
