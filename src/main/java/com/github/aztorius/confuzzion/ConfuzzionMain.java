@@ -402,7 +402,7 @@ public class ConfuzzionMain {
                     currentProg.saveAsJimpleFiles(folder.toString());
                     // Save stats to stats.txt
                     String statsFile = Paths.get(folder.toString(), "stats.txt").toString();
-                    String content = String.format("Found violation in %l ns\nStacked mutations: %i", System.nanoTime() - startTime, mutationsStack.size());
+                    String content = String.format("Found violation in %l ns\nStacked mutations: %i\n", System.nanoTime() - startTime, mutationsStack.size());
                     logger.info(content);
                     try {
                         Util.writeToFile(statsFile, content);
