@@ -26,6 +26,7 @@ public class ConfuzzionMain {
     private Path resultFolder;
 
     private static final long MAIN_LOOP_ITERATIONS = -1; // no limit
+    private static final int CONSTANTS_TRIES = 1;
     private static final long TIMEOUT = 1000L;
     private static final int STACK_LIMIT = Integer.MAX_VALUE;
     private static final boolean WITH_JVM = true;
@@ -41,6 +42,7 @@ public class ConfuzzionMain {
 
         Path resultFolder = Paths.get("confuzzionResults/");
         long main_loop_iterations = ConfuzzionMain.MAIN_LOOP_ITERATIONS;
+        int constantsTries = ConfuzzionMain.CONSTANTS_TRIES;
         long timeout = ConfuzzionMain.TIMEOUT;
         int stackLimit = ConfuzzionMain.STACK_LIMIT;
         boolean withJVM = ConfuzzionMain.WITH_JVM;
@@ -60,6 +62,9 @@ public class ConfuzzionMain {
             }
             if (line.hasOption("i")) {
                 main_loop_iterations = Long.parseLong(line.getOptionValue("i"));
+            }
+            if (line.hasOption("c")) {
+                constantsTries = Integer.parseInt(line.getOptionValue("c"));
             }
             if (line.hasOption("t")) {
                 timeout = Long.parseLong(line.getOptionValue("t"));
@@ -100,7 +105,7 @@ public class ConfuzzionMain {
 
         ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
 
-        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome, seedFile);
+        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome, seedFile, constantsTries);
     }
 
     private static Options configParameters() {
@@ -117,6 +122,14 @@ public class ConfuzzionMain {
                 .desc("Main loop iterations / -1 no limit by default")
                 .hasArg(true)
                 .argName("iterations")
+                .required(false)
+                .build();
+
+        final Option constantsTriesOption = Option.builder("c")
+                .longOpt("constants-tries")
+                .desc("Constants tries / 1 by default")
+                .hasArg(true)
+                .argName("tries")
                 .required(false)
                 .build();
 
@@ -207,6 +220,7 @@ public class ConfuzzionMain {
 
         options.addOption(outputOption);
         options.addOption(iterationsOption);
+        options.addOption(constantsTriesOption);
         options.addOption(timeoutOption);
         options.addOption(runnerOption);
         options.addOption(jvmOption);
@@ -222,7 +236,7 @@ public class ConfuzzionMain {
         return options;
     }
 
-    public void startMutation(long mainloop_turn, long timeout, int stackLimit, boolean withJVM, String javahome, Path seedFolder) {
+    public void startMutation(long mainloop_turn, long timeout, int stackLimit, boolean withJVM, String javahome, Path seedFolder, int constants_tries) {
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
         logger.info("Soot Class Path: {}", Scene.v().getSootClassPath());
@@ -336,6 +350,7 @@ public class ConfuzzionMain {
                     resultFolder.toAbsolutePath().toString(),
                     loop1 + "-" + mutation.getClass().getSimpleName());
             Boolean keepFolder = false;
+            int loop2 = 0;
             try {
                 // Instantiation and launch
                 if (withJVM) {
@@ -345,16 +360,31 @@ public class ConfuzzionMain {
                         logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                         break;
                     }
-                    currentProg.genAndLaunchWithJVM(javahome, folder.toString(), timeout);
-                } else { //with threads
-                    currentProg.genAndLaunch(timeout);
                 }
+
+                for (loop2 = 0; loop2 < constants_tries; loop2++) {
+                    try {
+                        if (withJVM) {
+                            currentProg.genAndLaunchWithJVM(javahome, folder.toString(), timeout);
+                        } else { //with threads
+                            currentProg.genAndLaunch(timeout);
+                        }
+                    } catch(Throwable e2) {
+                        Throwable cause = Util.getCause(e2);
+                        if (cause instanceof ContractCheckException || loop2 == constants_tries - 1) {
+                            throw e2;
+                        } else {
+                            mutation.randomConstants();
+                        }
+                    }
+                }
+
                 // Remove contracts checks for next turn
                 currentProg.removeContractsChecks(contractsMutations);
                 // Add mutation to the stack
                 mutationsStack.push(mutation);
                 // Update status screen
-                statusScreen.newMutation(mutation.getClass(), Status.SUCCESS, 1);
+                statusScreen.newMutation(mutation.getClass(), Status.SUCCESS, loop2);
             } catch(Throwable e) {
                 logger.warn("Exception while executing program", e);
                 Throwable cause = Util.getCause(e);
@@ -380,13 +410,13 @@ public class ConfuzzionMain {
                         logger.error("Writing file {}", statsFile, e1);
                     }
                     // Update status screen
-                    statusScreen.newMutation(mutation.getClass(), Status.VIOLATES, 1);
+                    statusScreen.newMutation(mutation.getClass(), Status.VIOLATES, loop2);
                 } else if (cause instanceof InterruptedException) {
                     // Update status screen
-                    statusScreen.newMutation(mutation.getClass(), Status.INTERRUPTED, 1);
+                    statusScreen.newMutation(mutation.getClass(), Status.INTERRUPTED, loop2);
                 } else {
                     // Update status screen
-                    statusScreen.newMutation(mutation.getClass(), Status.CRASHED, 1);
+                    statusScreen.newMutation(mutation.getClass(), Status.CRASHED, loop2);
                 }
                 // Remove contracts checks
                 currentProg.removeContractsChecks(contractsMutations);
