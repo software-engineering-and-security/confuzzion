@@ -1,11 +1,11 @@
-package com.github.aztorius.confuzzion;
+package confuzzion;
 
 public class MutationException extends Exception {
     /**
-	 * Generated serialVersionUID
-	 */
-	private static final long serialVersionUID = 6277454387052871692L;
-	private Class<?> mutationClass;
+     * Generated serialVersionUID
+     */
+    private static final long serialVersionUID = 6277454387052871692L;
+    private Class<?> mutationClass;
     private BodyMutation mutation;
 
     public MutationException(Class<?> mutationClass, String reason) {

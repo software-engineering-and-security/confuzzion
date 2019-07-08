@@ -1,4 +1,4 @@
-package com.github.aztorius.confuzzion;
+package confuzzion;
 
 public class ConfuzzionOptions {
     private static final ConfuzzionOptions instance = new ConfuzzionOptions();

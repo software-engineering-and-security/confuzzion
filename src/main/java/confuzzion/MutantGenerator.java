@@ -1,4 +1,4 @@
-package com.github.aztorius.confuzzion;
+package confuzzion;
 
 import soot.ArrayType;
 import soot.Local;
@@ -72,7 +72,7 @@ public class MutantGenerator {
         // return;
         Unit endStmt = Jimple.v().newReturnVoidStmt();
         consUnits.insertBefore(endStmt, consUnits.getLast());
-        SootClass contractExceptionClass = Util.getOrLoadSootClass("com.github.aztorius.confuzzion.ContractCheckException");
+        SootClass contractExceptionClass = Util.getOrLoadSootClass("confuzzion.ContractCheckException");
         SootClass throwableClass = Util.getOrLoadSootClass("java.lang.Throwable");
         // Throwable e := @caughtexception;
         Local caughtException = Jimple.v().newLocal("localexcept" + rand.nextIncrement(), throwableClass.getType());

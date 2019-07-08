@@ -1,4 +1,4 @@
-package com.github.aztorius.confuzzion;
+package confuzzion;
 
 /**
  * Class ContractCheckException is thrown when a contract check failed

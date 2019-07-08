@@ -1,4 +1,4 @@
-package com.github.aztorius.confuzzion;
+package confuzzion;
 
 /**
  * Class ProgramMutation describes a mutation on a Program

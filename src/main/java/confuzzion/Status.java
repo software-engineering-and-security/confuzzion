@@ -1,4 +1,4 @@
-package com.github.aztorius.confuzzion;
+package confuzzion;
 
 public enum Status {
     SUCCESS, /* Mutation success, and execution return no error */

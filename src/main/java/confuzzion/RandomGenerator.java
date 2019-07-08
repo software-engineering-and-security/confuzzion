@@ -1,4 +1,4 @@
-package com.github.aztorius.confuzzion;
+package confuzzion;
 
 import soot.BooleanType;
 import soot.ByteType;

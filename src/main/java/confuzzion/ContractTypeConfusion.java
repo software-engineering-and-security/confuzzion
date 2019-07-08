@@ -1,4 +1,4 @@
-package com.github.aztorius.confuzzion;
+package confuzzion;
 
 import soot.Body;
 import soot.BooleanType;
@@ -24,7 +24,7 @@ public class ContractTypeConfusion implements Contract {
     @Override
     public BodyMutation applyCheck(Body body) {
         BodyMutation mutation = new BodyMutation(body);
-        SootClass exception = Util.getOrLoadSootClass("com.github.aztorius.confuzzion.ContractCheckException");
+        SootClass exception = Util.getOrLoadSootClass("confuzzion.ContractCheckException");
         SootMethod mExceptionInit = exception.getMethodByName("<init>");
         int a = 0;
         ArrayList<Local> newLocals = new ArrayList<Local>(10);

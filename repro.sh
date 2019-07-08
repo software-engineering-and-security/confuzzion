@@ -6,4 +6,4 @@ LOCAL_JAVA=$1
 
 cd "$(dirname "$0")"
 
-$LOCAL_JAVA -Dorg.slf4j.simpleLogger.defaultLogLevel=DEBUG -cp target/confuzzion-1.0-SNAPSHOT-jar-with-dependencies.jar com.github.aztorius.confuzzion.Repro ${@:2}
+$LOCAL_JAVA -Dorg.slf4j.simpleLogger.defaultLogLevel=DEBUG -cp target/confuzzion-1.0-SNAPSHOT-jar-with-dependencies.jar confuzzion.Repro ${@:2}

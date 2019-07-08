@@ -1,4 +1,4 @@
-package com.github.aztorius.confuzzion;
+package confuzzion;
 
 import soot.Body;
 import soot.Local;
@@ -23,7 +23,7 @@ public class EqualsContract implements Contract {
     public BodyMutation applyCheck(Body body) {
         BodyMutation mutation = new BodyMutation(body);
         SootClass exception = Scene.v().getSootClass(
-            "com.github.aztorius.confuzzion.ContractCheckException");
+            "confuzzion.ContractCheckException");
         SootMethod mExceptionInit = exception.getMethodByName("<init>");
         SootClass clazz = Scene.v().getSootClass("java.lang.Object");
         SootMethod mEquals = clazz.getMethodByName("equals");
