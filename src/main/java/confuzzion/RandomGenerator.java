@@ -39,28 +39,24 @@ public class RandomGenerator {
     private float poolFloat[] = {0.0f, 1.0f, -1.0f};
     private double poolDouble[] = {0.0, 1.0, -1.0};
 
-    private ArrayList<String> strClasses;
+    private List<String> strClasses;
     private ArrayList<String> strMutants;
 
     /**
      * Constructor
      */
-    public RandomGenerator() {
-        this(new Random());
+    public RandomGenerator(List<String> targetClasses) {
+        this(targetClasses, new Random());
     }
 
     /**
      * Constructor with specified java.util.Random source
      * @param rand the Random source to use
      */
-    public RandomGenerator(Random rand) {
+    public RandomGenerator(List<String> targetClasses, Random rand) {
         this.rand = rand;
         this.counter = 0;
-        strClasses = new ArrayList<String>();
-        //strClasses.add("java.lang.invoke.MethodHandles");
-        strClasses.add("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
-        strClasses.add("java.lang.Integer");
-        strClasses.add("java.lang.String");
+        strClasses = targetClasses;
         strMutants = new ArrayList<String>();
     }
 

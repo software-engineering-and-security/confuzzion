@@ -243,7 +243,11 @@ public class ConfuzzionMain {
         logger.info("Default java.home: {}", System.getProperty("java.home"));
         logger.info("Target java.home: {}", javahome);
 
-        RandomGenerator rand = new RandomGenerator();
+        ArrayList<String> targetClasses = new ArrayList<String>();
+        targetClasses.add("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
+        targetClasses.add("java.lang.Integer");
+        targetClasses.add("java.lang.String");
+        RandomGenerator rand = new RandomGenerator(targetClasses);
 
         Program currentProg = null;
         if (seedFolder != null) {
