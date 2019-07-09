@@ -85,7 +85,7 @@ public class Program {
         executedMethods = new HashSet<SootMethod>();
 
         if (createFirstMutant) {
-            // Create first empty Mutant (main class)
+            // Create first empty Mutant
             MutantGenerator generator = new MutantGenerator(rand, classBaseName + "0");
             Mutant firstMutant = generator.genEmptyClass("java.lang.Object");
             mutants.add(firstMutant);
