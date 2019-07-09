@@ -355,6 +355,7 @@ public class ConfuzzionMain {
                     loop1 + "-" + mutation.getClass().getSimpleName());
             Boolean keepFolder = false;
             int loop2 = 0;
+            Status status = Status.NOTEXECUTED;
             try {
                 // Instantiation and launch
                 if (withJVM) {
@@ -387,8 +388,7 @@ public class ConfuzzionMain {
                 currentProg.removeContractsChecks(contractsMutations);
                 // Add mutation to the stack
                 mutationsStack.push(mutation);
-                // Update status screen
-                statusScreen.newMutation(mutation.getClass(), Status.SUCCESS, loop2);
+                status = Status.SUCCESS;
             } catch(Throwable e) {
                 logger.warn("Exception while executing program", e);
                 Throwable cause = Util.getCause(e);
@@ -413,20 +413,23 @@ public class ConfuzzionMain {
                     } catch (IOException e1) {
                         logger.error("Writing file {}", statsFile, e1);
                     }
-                    // Update status screen
-                    statusScreen.newMutation(mutation.getClass(), Status.VIOLATES, loop2);
+                    status = Status.VIOLATES;
                 } else if (cause instanceof InterruptedException) {
-                    // Update status screen
-                    statusScreen.newMutation(mutation.getClass(), Status.INTERRUPTED, loop2);
+                    status = Status.INTERRUPTED;
                 } else {
-                    // Update status screen
-                    statusScreen.newMutation(mutation.getClass(), Status.CRASHED, loop2);
+                    status = Status.CRASHED;
                 }
                 // Remove contracts checks
                 currentProg.removeContractsChecks(contractsMutations);
                 // Bad sample, revert mutation
                 mutation.undo();
             } finally {
+                // Update status screen
+                statusScreen.newMutation(mutation.getClass(), status, loop2);
+                if (mutation instanceof CallMethodMutation) {
+                    CallMethodMutation cmm = (CallMethodMutation)mutation;
+                    rand.addMethodCallStatus(cmm.getCalledMethod(), status == Status.SUCCESS || status == Status.VIOLATES );
+                }
                 if (withJVM && !keepFolder) {
                     // Remove folder
                     try {
