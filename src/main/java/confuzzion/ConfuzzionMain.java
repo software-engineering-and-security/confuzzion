@@ -377,6 +377,7 @@ public class ConfuzzionMain {
                     } catch(Throwable e2) {
                         Throwable cause = Util.getCause(e2);
                         if (cause instanceof ContractCheckException || loop2 == constants_tries - 1) {
+                            loop2++;
                             throw e2;
                         } else {
                             mutation.randomConstants();
