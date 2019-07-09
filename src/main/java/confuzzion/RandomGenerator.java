@@ -382,6 +382,25 @@ public class RandomGenerator {
     }
 
     /**
+     * Randomly choose a local of the specified type
+     * @param locals
+     * @param type
+     * @return
+     */
+    public Local randLocal(Chain<Local> locals, Type type) {
+        ArrayList<Local> localRefs = new ArrayList<Local>(10);
+        for (Local loc : locals) {
+            if (loc.getType() == type) {
+                localRefs.add(loc);
+            }
+        }
+        if (localRefs.size() <= 0) {
+            return null;
+        }
+        return localRefs.get(this.nextUint(localRefs.size()));
+    }
+
+    /**
      * Randomly choose a local of type RefType that is a Mutant class or a target class
      * @param  locals chain of locals
      * @param  canBeAnyRefType if true then can return any RefType Local provided, not only a target class or Mutant class type
