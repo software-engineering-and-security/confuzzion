@@ -1,6 +1,5 @@
 package confuzzion;
 
-import soot.Modifier;
 import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
@@ -23,7 +22,7 @@ public class AddFieldMutation extends ClassMutation {
 
         // Call constructor inside <clinit> or <init>
         SootMethod meth = null;
-        if ((modifiers & Modifier.STATIC) > 0) {
+        if (addedField.isStatic()) {
             meth = sootClass.getMethodByName("<clinit>");
         } else {
             meth = sootClass.getMethodByName("<init>");
