@@ -406,7 +406,7 @@ public class ConfuzzionMain {
                     currentProg.saveAsJimpleFiles(folder.toString());
                     // Save stats to stats.txt
                     String statsFile = Paths.get(folder.toString(), "stats.txt").toString();
-                    String content = String.format("Found violation in %l ns\nStacked mutations: %i\n", System.nanoTime() - startTime, mutationsStack.size());
+                    String content = String.format("Found violation in %d ns\nStacked mutations: %d\n", System.nanoTime() - startTime, mutationsStack.size());
                     logger.info(content);
                     try {
                         Util.writeToFile(statsFile, content);
@@ -428,7 +428,7 @@ public class ConfuzzionMain {
                 statusScreen.newMutation(mutation.getClass(), status, loop2);
                 if (mutation instanceof CallMethodMutation) {
                     CallMethodMutation cmm = (CallMethodMutation)mutation;
-                    rand.addMethodCallStatus(cmm.getCalledMethod(), status == Status.SUCCESS || status == Status.VIOLATES );
+                    rand.addMethodCallStatus(cmm.getCalledMethod(), status == Status.SUCCESS || status == Status.VIOLATES);
                 }
                 if (withJVM && !keepFolder) {
                     // Remove folder
