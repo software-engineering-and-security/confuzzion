@@ -89,6 +89,7 @@ public class ConfuzzionMain {
             ConfuzzionOptions.v().use_jasmin_backend = line.hasOption("jasmin");
             ConfuzzionOptions.v().allow_unsafe_assignment = line.hasOption("unsafe-assignment");
             ConfuzzionOptions.v().fixed_number_of_classes = !line.hasOption("one-class");
+            ConfuzzionOptions.v().use_uniform_distribution_for_methods = line.hasOption("uniform-methods-distribution");
 
             if (!Files.exists(resultFolder)) {
                 Files.createDirectories(resultFolder);
@@ -209,6 +210,13 @@ public class ConfuzzionMain {
                 .required(false)
                 .build();
 
+        final Option uniformMethodsDistribution = Option.builder()
+                .longOpt("uniform-methods-distribution")
+                .desc("Select methods uniformly when applying a mutation. By default it tends to select methods with a high failure rate.")
+                .hasArg(false)
+                .required(false)
+                .build();
+
         final Option helpOption = Option.builder("h")
                 .longOpt("help")
                 .desc("Print this message")
@@ -231,6 +239,7 @@ public class ConfuzzionMain {
         options.addOption(unsafeAssignment);
         options.addOption(classNumberOption);
         options.addOption(startWithOneClass);
+        options.addOption(uniformMethodsDistribution);
         options.addOption(helpOption);
 
         return options;

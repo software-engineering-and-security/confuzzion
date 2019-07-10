@@ -9,7 +9,6 @@ import soot.jimple.Jimple;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 public class CallMethodMutation extends MethodMutation {
     private SootMethod calledMethod;
@@ -25,7 +24,12 @@ public class CallMethodMutation extends MethodMutation {
         initializeMutation = null;
 
         Body body = method.getActiveBody();
-        Local local = rand.randLocalRef(body.getLocals(), false);
+        calledMethod = rand.getRandomMethod(method.getDeclaringClass().getName());
+        SootClass sClass = calledMethod.getDeclaringClass();
+        RefType type = sClass.getType();
+
+        Local local = rand.randLocal(body.getLocals(), type);
+
         if (local == null) {
             local = Jimple.v().newLocal("local" + rand.nextIncrement(), rand.randRefType(method.getDeclaringClass().getName()));
             mutation.addLocal(local);
@@ -37,37 +41,6 @@ public class CallMethodMutation extends MethodMutation {
                 throw new MutationException(CallMethodMutation.class, e.getMessage());
             }
         }
-
-        RefType type = (RefType)local.getType();
-        SootClass sClass = type.getSootClass();
-        List<SootMethod> methods = sClass.getMethods();
-        if (methods.size() == 0) {
-            this.undo();
-            throw new MutationException(CallMethodMutation.class,
-                    "No method available on object " + local.toString());
-        }
-
-        List<SootMethod> availableMethods = new ArrayList<SootMethod>();
-        for (SootMethod m : methods) {
-            // We should not call the constructor twice !
-            // nor call a non-Public method on an external class
-            if (!m.isConstructor() &&
-                !m.getName().startsWith("<")) {
-                if ((sClass == method.getDeclaringClass() && m != method) ||
-                        (sClass != method.getDeclaringClass() && m.isPublic())) {
-                    availableMethods.add(m);
-                }
-            }
-        }
-
-        if (availableMethods.size() == 0) {
-            this.undo();
-            throw new MutationException(CallMethodMutation.class,
-                    "No public method available on object " + local.toString());
-        }
-
-        int methodSel = rand.nextUint(availableMethods.size());
-        calledMethod = availableMethods.get(methodSel);
 
         // Call method
         this.genMethodCall(body, local, calledMethod);

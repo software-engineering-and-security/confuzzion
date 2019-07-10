@@ -19,12 +19,16 @@ import soot.Value;
 import soot.VoidType;
 import soot.jimple.ClassConstant;
 import soot.jimple.StringConstant;
+import soot.options.Options;
 import soot.util.Chain;
 
 import java.lang.Math;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Random Generator with custom methods for Soot objects
@@ -41,6 +45,9 @@ public class RandomGenerator {
 
     private List<String> strClasses;
     private ArrayList<String> strMutants;
+    private ArrayList<MethodComplexity> callableMethods;
+
+    private static final Logger logger = LoggerFactory.getLogger(RandomGenerator.class);
 
     /**
      * Constructor
@@ -56,12 +63,93 @@ public class RandomGenerator {
     public RandomGenerator(List<String> targetClasses, Random rand) {
         this.rand = rand;
         this.counter = 0;
-        strClasses = targetClasses;
+        strClasses = new ArrayList<String>();
         strMutants = new ArrayList<String>();
+        callableMethods = new ArrayList<MethodComplexity>();
+
+        for (String strClass : targetClasses) {
+            this.addStrClass(strClass);
+        }
     }
 
     public void addStrClass(String className) {
         strClasses.add(className);
+        SootClass sClass = Util.getOrLoadSootClass(className);
+        List<SootMethod> methods = sClass.getMethods();
+
+        for (SootMethod method : methods) {
+            if (method.isPublic() && !method.isConstructor()) {
+                callableMethods.add(new MethodComplexity(method));
+                logger.info("Add callable method {}", method.getSignature());
+            }
+        }
+    }
+
+    public void addMethodCallStatus(SootMethod method, boolean success) {
+        for (MethodComplexity mc : callableMethods) {
+            if (mc.getMethod().equals(method)) {
+                if (success) {
+                    mc.newSuccess();
+                } else {
+                    mc.newFailure();
+                }
+                break;
+            }
+        }
+    }
+
+    public SootMethod getRandomExternalMethod() {
+        if (ConfuzzionOptions.v().use_uniform_distribution_for_methods) {
+            return callableMethods.get(this.nextUint(callableMethods.size())).getMethod();
+        } else {
+            ArrayList<Double> probabilities = new ArrayList<Double>(callableMethods.size());
+
+            double all = 0.0;
+            for (MethodComplexity mc : callableMethods) {
+                // Adding 0.01 prevents from using a probability of 0 when a method has a failure rate of 0
+                double value = mc.getFailureRate() + 0.01;
+                all += value;
+                probabilities.add(new Double(value));
+            }
+
+            double target = this.nextDouble();
+            for (int i = 0; i < probabilities.size(); i++) {
+                Double d = probabilities.get(i);
+                d /= all;
+                if (target <= d) {
+                    return callableMethods.get(i).getMethod();
+                } else {
+                    target -= d;
+                }
+            }
+
+            throw new RuntimeException("No method has been found in the boundary");
+        }
+    }
+
+    public SootMethod getRandomMethod(String className) {
+        // p = 1/5 => call a local method
+        if (this.nextUint(5) == 0) {
+            // Choose a method from this class or a further generated class
+            int index = strMutants.indexOf(className);
+            int random = this.nextUint(strMutants.size() - index);
+            String classString = strMutants.get(random + index);
+            SootClass sClass = Util.getOrLoadSootClass(classString);
+            List<SootMethod> methods = new ArrayList<SootMethod>();
+            for (SootMethod method : sClass.getMethods()) {
+                if (!method.isConstructor() && !method.getName().startsWith("<")) {
+                    methods.add(method);
+                }
+            }
+            if (methods.size() <= 0) {
+                // Fall back to external method
+                return this.getRandomExternalMethod();
+            }
+            return methods.get(this.nextUint(methods.size()));
+        } else { // p = 4/5 => call an external method
+            // Choose a method from a target class
+            return this.getRandomExternalMethod();
+        }
     }
 
     public void addStrMutant(String className) {
