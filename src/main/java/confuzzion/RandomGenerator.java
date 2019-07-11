@@ -19,7 +19,6 @@ import soot.Value;
 import soot.VoidType;
 import soot.jimple.ClassConstant;
 import soot.jimple.StringConstant;
-import soot.options.Options;
 import soot.util.Chain;
 
 import java.lang.Math;
@@ -46,6 +45,7 @@ public class RandomGenerator {
     private List<String> strClasses;
     private ArrayList<String> strMutants;
     private ArrayList<MethodComplexity> callableMethods;
+    private long callsBeforeResetProbabilities;
 
     private static final Logger logger = LoggerFactory.getLogger(RandomGenerator.class);
 
@@ -66,6 +66,7 @@ public class RandomGenerator {
         strClasses = new ArrayList<String>();
         strMutants = new ArrayList<String>();
         callableMethods = new ArrayList<MethodComplexity>();
+        callsBeforeResetProbabilities = 0;
 
         for (String strClass : targetClasses) {
             this.addStrClass(strClass);
@@ -102,24 +103,35 @@ public class RandomGenerator {
         if (ConfuzzionOptions.v().use_uniform_distribution_for_methods) {
             return callableMethods.get(this.nextUint(callableMethods.size())).getMethod();
         } else {
-            ArrayList<Double> probabilities = new ArrayList<Double>(callableMethods.size());
+            if (callsBeforeResetProbabilities-- <= 0) {
+                callsBeforeResetProbabilities = 1000;
+                double all = 0.0;
+                for (MethodComplexity mc : callableMethods) {
+                    double value = mc.getScore();
+                    all += value;
+                    mc.setProbability(value);
+                }
 
-            double all = 0.0;
-            for (MethodComplexity mc : callableMethods) {
-                // Adding 0.01 prevents from using a probability of 0 when a method has a failure rate of 0
-                double value = mc.getFailureRate() + 0.01;
-                all += value;
-                probabilities.add(new Double(value));
-            }
-
-            double target = this.nextDouble();
-            for (int i = 0; i < probabilities.size(); i++) {
-                Double d = probabilities.get(i);
-                d /= all;
-                if (target <= d) {
-                    return callableMethods.get(i).getMethod();
-                } else {
-                    target -= d;
+                double target = this.nextDouble();
+                for (MethodComplexity mc : callableMethods) {
+                    Double d = mc.getProbability();
+                    d /= all;
+                    mc.setProbability(d);
+                    if (target <= d) {
+                        return mc.getMethod();
+                    } else {
+                        target -= d;
+                    }
+                }
+            } else { // Use old probabilities
+                double target = this.nextDouble();
+                for (MethodComplexity mc : callableMethods) {
+                    Double d = mc.getProbability();
+                    if (target <= d) {
+                        return mc.getMethod();
+                    } else {
+                        target -= d;
+                    }
                 }
             }
 
@@ -128,8 +140,8 @@ public class RandomGenerator {
     }
 
     public SootMethod getRandomMethod(String className) {
-        // p = 1/5 => call a local method
-        if (this.nextUint(5) == 0) {
+        // p = 1/10 => call a local method
+        if (this.nextUint(10) == 0) {
             // Choose a method from this class or a further generated class
             int index = strMutants.indexOf(className);
             int random = this.nextUint(strMutants.size() - index);
