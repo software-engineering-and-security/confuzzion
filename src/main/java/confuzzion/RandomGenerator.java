@@ -45,9 +45,10 @@ public class RandomGenerator {
     private List<String> strClasses;
     private ArrayList<String> strMutants;
     private ArrayList<MethodComplexity> callableMethods;
-    private long callsBeforeResetProbabilities;
+    private long remainingCalls;
 
     private static final Logger logger = LoggerFactory.getLogger(RandomGenerator.class);
+    private static final long callsBeforeRefreshProbabilites = 2000;
 
     /**
      * Constructor
@@ -66,7 +67,7 @@ public class RandomGenerator {
         strClasses = new ArrayList<String>();
         strMutants = new ArrayList<String>();
         callableMethods = new ArrayList<MethodComplexity>();
-        callsBeforeResetProbabilities = 0;
+        remainingCalls = 0;
 
         for (String strClass : targetClasses) {
             this.addStrClass(strClass);
@@ -103,8 +104,8 @@ public class RandomGenerator {
         if (ConfuzzionOptions.v().use_uniform_distribution_for_methods) {
             return callableMethods.get(this.nextUint(callableMethods.size())).getMethod();
         } else {
-            if (callsBeforeResetProbabilities-- <= 0) {
-                callsBeforeResetProbabilities = 1000;
+            if (remainingCalls-- <= 0) {
+                remainingCalls = callsBeforeRefreshProbabilites;
                 double all = 0.0;
                 for (MethodComplexity mc : callableMethods) {
                     double value = mc.getScore();
@@ -113,15 +114,22 @@ public class RandomGenerator {
                 }
 
                 double target = this.nextDouble();
+                SootMethod targetMethod = null;
                 for (MethodComplexity mc : callableMethods) {
                     Double d = mc.getProbability();
                     d /= all;
                     mc.setProbability(d);
-                    if (target <= d) {
-                        return mc.getMethod();
-                    } else {
-                        target -= d;
+                    if (targetMethod == null) {
+                        if (target <= d) {
+                            targetMethod = mc.getMethod();
+                        } else {
+                            target -= d;
+                        }
                     }
+                }
+
+                if (targetMethod != null) {
+                    return targetMethod;
                 }
             } else { // Use old probabilities
                 double target = this.nextDouble();

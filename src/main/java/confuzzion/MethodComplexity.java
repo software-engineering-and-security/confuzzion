@@ -5,7 +5,7 @@ import soot.SootMethod;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 
 public class MethodComplexity {
-    private final static double inverseConfidence = 0.05;
+    private final static double confidence = 0.95;
 
     private SootMethod method;
     private double failureRate;
@@ -44,7 +44,7 @@ public class MethodComplexity {
         double score = failureRate;
         double degreeOfFreedom = 2 * (failures + 1);
         ChiSquaredDistribution chi2 = new ChiSquaredDistribution(null, degreeOfFreedom);
-        score += ((chi2.inverseCumulativeProbability(inverseConfidence) / 2.0) / (double)all);
+        score += ((chi2.inverseCumulativeProbability(confidence) / 2.0) / (double)all);
         return score;
     }
 
