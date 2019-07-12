@@ -30,6 +30,7 @@ public class ConfuzzionMain {
     private static final long TIMEOUT = 1000L;
     private static final int STACK_LIMIT = Integer.MAX_VALUE;
     private static final boolean WITH_JVM = true;
+    private static final long TIMER_TIMEOUT = 1000;
     private static final Logger logger = LoggerFactory.getLogger(ConfuzzionMain.class);
 
     public ConfuzzionMain(Path resultFolder) {
@@ -90,6 +91,7 @@ public class ConfuzzionMain {
             ConfuzzionOptions.v().allow_unsafe_assignment = line.hasOption("unsafe-assignment");
             ConfuzzionOptions.v().fixed_number_of_classes = !line.hasOption("one-class");
             ConfuzzionOptions.v().use_uniform_distribution_for_methods = line.hasOption("uniform-methods-distribution");
+            ConfuzzionOptions.v().quiet = line.hasOption("q");
 
             if (!Files.exists(resultFolder)) {
                 Files.createDirectories(resultFolder);
@@ -217,6 +219,13 @@ public class ConfuzzionMain {
                 .required(false)
                 .build();
 
+        final Option quietOption = Option.builder("q")
+                .longOpt("quiet")
+                .desc("Do not print on standard output")
+                .hasArg(false)
+                .required(false)
+                .build();
+
         final Option helpOption = Option.builder("h")
                 .longOpt("help")
                 .desc("Print this message")
@@ -240,6 +249,7 @@ public class ConfuzzionMain {
         options.addOption(classNumberOption);
         options.addOption(startWithOneClass);
         options.addOption(uniformMethodsDistribution);
+        options.addOption(quietOption);
         options.addOption(helpOption);
 
         return options;
@@ -331,7 +341,9 @@ public class ConfuzzionMain {
         // Refresh Status in command line each second
         Timer timer = new Timer();
         StatusScreen statusScreen = new StatusScreen();
-        timer.schedule(statusScreen, 0, 1000);
+        if (!ConfuzzionOptions.v().quiet) {
+            timer.schedule(statusScreen, 0, TIMER_TIMEOUT);
+        }
         final long startTime = System.nanoTime();
 
         for (long loop1 = 0; loop1 < mainloop_turn || mainloop_turn < 0; loop1++) {
