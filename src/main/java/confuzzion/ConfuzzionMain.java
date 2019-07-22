@@ -426,6 +426,7 @@ public class ConfuzzionMain {
                     if (!withJVM) {
                         try {
                             Files.createDirectories(folder);
+                            currentProg.saveAsClassFiles(folder.toString());
                         } catch(IOException e2) {
                             logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
                             break;
