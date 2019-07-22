@@ -148,8 +148,8 @@ public class RandomGenerator {
     }
 
     public SootMethod getRandomMethod(String className) {
-        // p = 1/10 => call a local method
-        if (this.nextUint(10) == 0) {
+        // p = 1/100 => call a local method
+        if (this.nextUint(100) == 0) {
             // Choose a method from this class or a further generated class
             int index = strMutants.indexOf(className);
             int random = this.nextUint(strMutants.size() - index);
@@ -166,7 +166,7 @@ public class RandomGenerator {
                 return this.getRandomExternalMethod();
             }
             return methods.get(this.nextUint(methods.size()));
-        } else { // p = 4/5 => call an external method
+        } else {
             // Choose a method from a target class
             return this.getRandomExternalMethod();
         }
