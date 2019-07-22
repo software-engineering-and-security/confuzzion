@@ -2,7 +2,7 @@ package confuzzion;
 
 import soot.SootMethod;
 
-import org.apache.commons.math3.distribution.ChiSquaredDistribution;
+import org.apache.commons.math3.distribution.BinomialDistribution;
 
 public class MethodComplexity {
     private final static double confidence = 0.95;
@@ -41,10 +41,8 @@ public class MethodComplexity {
     }
 
     public double getScore() {
-        double score = failureRate;
-        double degreeOfFreedom = 2 * (failures + 1);
-        ChiSquaredDistribution chi2 = new ChiSquaredDistribution(null, degreeOfFreedom);
-        score += ((chi2.inverseCumulativeProbability(confidence) / 2.0) / (double)all);
+        BinomialDistribution bin = new BinomialDistribution((int) all, failureRate);
+        double score = ((double)bin.inverseCumulativeProbability(confidence) / all);
         return score;
     }
 
