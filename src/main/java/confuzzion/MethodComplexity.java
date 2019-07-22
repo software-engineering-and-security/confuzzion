@@ -17,7 +17,7 @@ public class MethodComplexity {
         this.method = method;
         failureRate = 1.0;
         all = 1;
-        failures = 0;
+        failures = 1;
         probability = 0.0;
     }
 
