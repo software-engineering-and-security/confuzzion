@@ -108,15 +108,15 @@ public class RandomGenerator {
                 remainingCalls = callsBeforeRefreshProbabilites;
                 double all = 0.0;
                 for (MethodComplexity mc : callableMethods) {
-                    double value = mc.getScore();
-                    all += value;
-                    mc.setProbability(value);
+                    double score = mc.getScore();
+                    all += score;
+                    mc.setProbability(score);
                 }
 
                 double target = this.nextDouble();
                 SootMethod targetMethod = null;
                 for (MethodComplexity mc : callableMethods) {
-                    Double d = mc.getProbability();
+                    double d = mc.getProbability();
                     d /= all;
                     mc.setProbability(d);
                     if (targetMethod == null) {
@@ -134,7 +134,7 @@ public class RandomGenerator {
             } else { // Use old probabilities
                 double target = this.nextDouble();
                 for (MethodComplexity mc : callableMethods) {
-                    Double d = mc.getProbability();
+                    double d = mc.getProbability();
                     if (target <= d) {
                         return mc.getMethod();
                     } else {
