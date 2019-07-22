@@ -49,6 +49,7 @@ public class ConfuzzionMain {
         boolean withJVM = ConfuzzionMain.WITH_JVM;
         String javahome = System.getProperty("java.home");
         Path seedFile = null;
+        String targets[];
 
         try {
             CommandLine line = parser.parse(options, args);
@@ -67,7 +68,7 @@ public class ConfuzzionMain {
             if (line.hasOption("c")) {
                 constantsTries = Integer.parseInt(line.getOptionValue("c"));
             }
-            if (line.hasOption("t")) {
+            if (line.hasOption("timeout")) {
                 timeout = Long.parseLong(line.getOptionValue("t"));
             }
             if (line.hasOption("l")) {
@@ -87,6 +88,7 @@ public class ConfuzzionMain {
             if (line.hasOption("classes-limit")) {
                 ConfuzzionOptions.v().class_number_limit = Integer.parseInt(line.getOptionValue("classes-limit"));
             }
+            targets = line.getOptionValue("t").split(":");
             ConfuzzionOptions.v().use_jasmin_backend = line.hasOption("jasmin");
             ConfuzzionOptions.v().allow_unsafe_assignment = line.hasOption("unsafe-assignment");
             ConfuzzionOptions.v().fixed_number_of_classes = !line.hasOption("one-class");
@@ -96,6 +98,9 @@ public class ConfuzzionMain {
             if (!Files.exists(resultFolder)) {
                 Files.createDirectories(resultFolder);
             }
+
+            ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
+            conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome, seedFile, constantsTries, targets);
         } catch (ParseException e) {
             logger.error("Options parsing failed", e);
             HelpFormatter formatter = new HelpFormatter();
@@ -105,10 +110,6 @@ public class ConfuzzionMain {
             logger.error("Error", e);
             System.exit(1);
         }
-
-        ConfuzzionMain conf = new ConfuzzionMain(resultFolder);
-
-        conf.startMutation(main_loop_iterations, timeout, stackLimit, withJVM, javahome, seedFile, constantsTries);
     }
 
     private static Options configParameters() {
@@ -136,7 +137,7 @@ public class ConfuzzionMain {
                 .required(false)
                 .build();
 
-        final Option timeoutOption = Option.builder("t")
+        final Option timeoutOption = Option.builder()
                 .longOpt("timeout")
                 .desc("Timeout per program execution / 1000 ms by default")
                 .hasArg(true)
@@ -226,6 +227,14 @@ public class ConfuzzionMain {
                 .required(false)
                 .build();
 
+        final Option targetClassesOption = Option.builder("t")
+                .longOpt("targets")
+                .desc("List of target classes in Java form separated by ':'")
+                .hasArg(true)
+                .argName("target-classes")
+                .required(true)
+                .build();
+
         final Option helpOption = Option.builder("h")
                 .longOpt("help")
                 .desc("Print this message")
@@ -250,23 +259,21 @@ public class ConfuzzionMain {
         options.addOption(startWithOneClass);
         options.addOption(uniformMethodsDistribution);
         options.addOption(quietOption);
+        options.addOption(targetClassesOption);
         options.addOption(helpOption);
 
         return options;
     }
 
-    public void startMutation(long mainloop_turn, long timeout, int stackLimit, boolean withJVM, String javahome, Path seedFolder, int constants_tries) {
+    public void startMutation(long mainloop_turn, long timeout, int stackLimit, boolean withJVM, String javahome, Path seedFolder, int constants_tries, String targets[]) {
+        soot.options.Options.v().set_weak_map_structures(true);
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
         logger.info("Soot Class Path: {}", Scene.v().getSootClassPath());
         logger.info("Default java.home: {}", System.getProperty("java.home"));
         logger.info("Target java.home: {}", javahome);
 
-        ArrayList<String> targetClasses = new ArrayList<String>();
-        targetClasses.add("java.util.concurrent.atomic.AtomicReferenceFieldUpdater");
-        targetClasses.add("java.lang.Integer");
-        targetClasses.add("java.lang.String");
-        RandomGenerator rand = new RandomGenerator(targetClasses);
+        RandomGenerator rand = new RandomGenerator(targets);
 
         Program currentProg = null;
         if (seedFolder != null) {

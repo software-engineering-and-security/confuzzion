@@ -53,7 +53,7 @@ public class RandomGenerator {
     /**
      * Constructor
      */
-    public RandomGenerator(List<String> targetClasses) {
+    public RandomGenerator(String targetClasses[]) {
         this(targetClasses, new Random());
     }
 
@@ -61,7 +61,7 @@ public class RandomGenerator {
      * Constructor with specified java.util.Random source
      * @param rand the Random source to use
      */
-    public RandomGenerator(List<String> targetClasses, Random rand) {
+    public RandomGenerator(String targetClasses[], Random rand) {
         this.rand = rand;
         this.counter = 0;
         strClasses = new ArrayList<String>();
