@@ -447,9 +447,7 @@ public class RandomGenerator {
 
         if (canBeVolatile && rand.nextBoolean()) {
             modifiers |= Modifier.VOLATILE;
-        }
-
-        if (rand.nextBoolean()) {
+        } else if (rand.nextBoolean()) {
             modifiers |= Modifier.FINAL;
         }
 
