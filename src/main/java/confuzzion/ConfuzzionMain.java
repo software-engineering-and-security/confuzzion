@@ -309,25 +309,27 @@ public class ConfuzzionMain {
             ArrayList<BodyMutation> bodyMutations = currentProg.addContractCheckAllBodies(new ContractTypeConfusion());
             Path tmpFolder = Paths.get(resultFolder.toAbsolutePath().toString(), "seed");
             try {
+                try {
+                    Files.createDirectories(tmpFolder);
+                } catch(IOException e2) {
+                    logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
+                    return;
+                }
                 // Instantiation and launch
                 if (withJVM) {
-                    try {
-                        Files.createDirectories(tmpFolder);
-                    } catch(IOException e2) {
-                        logger.error("Printing last program generated:\n{}", currentProg.toString(), e2);
-                        return;
-                    }
                     currentProg.genAndLaunchWithJVM(javahome, tmpFolder.toString(), timeout);
                 } else { //with threads
                     currentProg.genAndLaunch(timeout);
                 }
                 currentProg.removeContractsChecks(bodyMutations);
-            } catch(ContractCheckException e) {
-                logger.error("Seed already contains a contract check failure", e);
-                currentProg.saveAsJimpleFiles(tmpFolder.toString());
-                return;
             } catch(Throwable e) {
-                logger.error("Error while using seed for the first time", e);
+                Throwable cause = Util.getCause(e);
+                if (cause instanceof ContractCheckException) {
+                    logger.error("Seed already contains a contract check failure", cause);
+                    currentProg.saveAsJimpleFiles(tmpFolder.toString());
+                } else {
+                    logger.error("Error while using seed for the first time", e);
+                }
                 return;
             }
         } else {
