@@ -10,6 +10,7 @@ import soot.Local;
 import soot.LongType;
 import soot.Modifier;
 import soot.RefType;
+import soot.Scene;
 import soot.ShortType;
 import soot.SootClass;
 import soot.SootField;
@@ -499,7 +500,11 @@ public class RandomGenerator {
     public Local randLocal(Chain<Local> locals, Type type) {
         ArrayList<Local> localRefs = new ArrayList<Local>(10);
         for (Local loc : locals) {
-            if (loc.getType() == type) {
+            Type locType = loc.getType();
+            if (locType == type ||
+                    (locType instanceof RefType &&
+                            type instanceof RefType &&
+                            locType.merge(type, Scene.v()) == type)) {
                 localRefs.add(loc);
             }
         }
