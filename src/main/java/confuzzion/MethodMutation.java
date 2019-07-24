@@ -153,6 +153,10 @@ public abstract class MethodMutation extends Mutation {
         Value arraySize = IntConstant.v(rand.nextUint(100) + 1);
         mutation.addUnit(Jimple.v().newAssignStmt(loc,
                 Jimple.v().newNewArrayExpr(baseType, arraySize)));
+        Local value0 = rand.randLocal(body.getLocals(), baseType);
+        if (value0 != null) {
+            mutation.addUnit(Jimple.v().newAssignStmt(Jimple.v().newArrayRef(loc, IntConstant.v(0)), value0));
+        }
         return loc;
     }
 
