@@ -24,6 +24,7 @@ import soot.util.Chain;
 
 import java.lang.Math;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -79,9 +80,10 @@ public class RandomGenerator {
     public void addStrClass(String className) {
         strClasses.add(className);
         SootClass sClass = Util.getOrLoadSootClass(className);
-        List<SootMethod> methods = sClass.getMethods();
+        Iterator<SootMethod> iterMethods = sClass.methodIterator();
 
-        for (SootMethod method : methods) {
+        while (iterMethods.hasNext()) {
+            SootMethod method = iterMethods.next();
             if (method.isPublic() && !method.isConstructor()) {
                 callableMethods.add(new MethodComplexity(method));
                 logger.info("Add callable method {}", method.getSignature());
@@ -160,7 +162,9 @@ public class RandomGenerator {
             String classString = strMutants.get(random + index);
             SootClass sClass = Util.getOrLoadSootClass(classString);
             List<SootMethod> methods = new ArrayList<SootMethod>();
-            for (SootMethod method : sClass.getMethods()) {
+            Iterator<SootMethod> iterMethods = sClass.methodIterator();
+            while (iterMethods.hasNext()) {
+                SootMethod method = iterMethods.next();
                 if (!method.isConstructor() && !method.getName().startsWith("<")) {
                     methods.add(method);
                 }

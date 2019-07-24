@@ -8,6 +8,7 @@ import soot.Type;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +122,9 @@ public class Program {
     }
 
     public void removeClass(Mutant mutant) {
-        for (SootMethod method : mutant.getSootClass().getMethods()) {
+        Iterator<SootMethod> iterMethods = mutant.getSootClass().methodIterator();
+        while (iterMethods.hasNext()) {
+            SootMethod method = iterMethods.next();
             executedMethods.remove(method);
         }
         mutants.remove(mutant);
@@ -184,7 +187,9 @@ public class Program {
     public ArrayList<BodyMutation> addContractCheckAllBodies(Contract contract) {
         ArrayList<BodyMutation> mutations = new ArrayList<BodyMutation>(10);
         for (Mutant mut : mutants) {
-            for (SootMethod m : mut.getSootClass().getMethods()) {
+            Iterator<SootMethod> iterMethods = mut.getSootClass().methodIterator();
+            while (iterMethods.hasNext()) {
+                SootMethod m = iterMethods.next();
                 mutations.add(contract.applyCheck(m.getActiveBody()));
             }
         }
@@ -202,7 +207,9 @@ public class Program {
     private SootMethod randomSootMethod() {
         SootClass sClass = this.randomSootClass();
         ArrayList<SootMethod> methods = new ArrayList<SootMethod>();
-        for (SootMethod method : sClass.getMethods()) {
+        Iterator<SootMethod> iterMethods = sClass.methodIterator();
+        while (iterMethods.hasNext()) {
+            SootMethod method = iterMethods.next();
             if (executedMethods.contains(method)) {
                 methods.add(method);
             } else if (method.getName().startsWith("<")) {

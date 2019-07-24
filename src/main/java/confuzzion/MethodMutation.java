@@ -20,6 +20,7 @@ import soot.jimple.Jimple;
 import soot.jimple.NullConstant;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -216,7 +217,9 @@ public abstract class MethodMutation extends Mutation {
         }
 
         ArrayList<SootMethod> constructors = new ArrayList<SootMethod>();
-        for (SootMethod method : clazz.getMethods()) {
+        Iterator<SootMethod> iterMethods = clazz.methodIterator();
+        while (iterMethods.hasNext()) {
+            SootMethod method = iterMethods.next();
             if (method.isConstructor() && method.isPublic()) {
                 constructors.add(method);
             }
@@ -228,7 +231,9 @@ public abstract class MethodMutation extends Mutation {
             // But first try to find a static method of Class<T> that return
             // a type T.
             ArrayList<SootMethod> methodsSameType = new ArrayList<SootMethod>();
-            for (SootMethod method : clazz.getMethods()) {
+            iterMethods = clazz.methodIterator();
+            while (iterMethods.hasNext()) {
+                SootMethod method = iterMethods.next();
                 if (method.isPublic() && method.isStatic()) {
                     if (method.getReturnType() == clazz.getType()) {
                         methodsSameType.add(method);

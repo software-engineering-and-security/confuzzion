@@ -20,6 +20,7 @@ import soot.jimple.NullConstant;
 import soot.util.Chain;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -138,7 +139,9 @@ public class MutantGenerator {
         do {
             SootClass classLoop = Scene.v().getSootClass(classLoopStr);
             ArrayList<SootMethod> constructors = new ArrayList<SootMethod>(5);
-            for (SootMethod m : classLoop.getMethods()) {
+            Iterator<SootMethod> iterMethods = classLoop.methodIterator();
+            while (iterMethods.hasNext()) {
+                SootMethod m = iterMethods.next();
                 if (m.isConstructor()) {
                     constructors.add(m);
                 }
@@ -209,7 +212,9 @@ public class MutantGenerator {
 
     private void genOverrideMethods() {
         SootClass superClass = sClass.getSuperclass();
-        for (SootMethod method : superClass.getMethods()) {
+        Iterator<SootMethod> iterMethods = superClass.methodIterator();
+        while (iterMethods.hasNext()) {
+            SootMethod method = iterMethods.next();
             if (method.isAbstract() && !method.isConstructor()) {
                 if (!sClass.declaresMethod(method.getSubSignature())) {
                     // Add a new method that implements method
@@ -423,7 +428,9 @@ public class MutantGenerator {
         }
 
         ArrayList<SootMethod> constructors = new ArrayList<SootMethod>();
-        for (SootMethod method : clazz.getMethods()) {
+        Iterator<SootMethod> iterMethods = clazz.methodIterator();
+        while (iterMethods.hasNext()) {
+            SootMethod method = iterMethods.next();
             if (method.isConstructor() && method.isPublic()) {
                 constructors.add(method);
             }
@@ -435,7 +442,9 @@ public class MutantGenerator {
             // But first try to find a static method of Class<T> that return
             // a type T.
             ArrayList<SootMethod> methodsSameType = new ArrayList<SootMethod>();
-            for (SootMethod method : clazz.getMethods()) {
+            iterMethods = clazz.methodIterator();
+            while (iterMethods.hasNext()) {
+                SootMethod method = iterMethods.next();
                 if (method.isPublic() && method.isStatic()) {
                     if (method.getReturnType() == clazz.getType()) {
                         methodsSameType.add(method);

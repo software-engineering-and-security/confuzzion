@@ -27,6 +27,7 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,7 +160,9 @@ public class Mutant {
     public static Mutant loadClass(String classname) {
         SootClass sClass = Scene.v().loadClassAndSupport(classname);
         sClass.setApplicationClass();
-        for (SootMethod m : sClass.getMethods()) {
+        Iterator<SootMethod> iterMethods = sClass.methodIterator();
+        while (iterMethods.hasNext()) {
+            SootMethod m = iterMethods.next();
             // Load method body
             m.retrieveActiveBody();
             // Remove soot CastExpr from units
