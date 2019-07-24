@@ -70,6 +70,7 @@ public class RandomGenerator {
         remainingCalls = 0;
 
         for (String strClass : targetClasses) {
+            logger.info("Add class: {}", strClass);
             this.addStrClass(strClass);
         }
     }
@@ -83,6 +84,8 @@ public class RandomGenerator {
             if (method.isPublic() && !method.isConstructor()) {
                 callableMethods.add(new MethodComplexity(method));
                 logger.info("Add callable method {}", method.getSignature());
+            } else if (logger.isInfoEnabled()) {
+                logger.info("Ignore method {}", method.getSignature());
             }
         }
     }
