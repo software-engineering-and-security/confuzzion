@@ -75,12 +75,21 @@ public class RandomGenerator {
             logger.info("Add class: {}", strClass);
             this.addStrClass(strClass);
         }
+
+        if (callableMethods.size() == 0) {
+            throw new RuntimeException("No callable methods has been found inside any target classes");
+        }
     }
 
     public void addStrClass(String className) {
         strClasses.add(className);
         SootClass sClass = Util.getOrLoadSootClass(className);
+        sClass.checkLevel(SootClass.SIGNATURES);
         Iterator<SootMethod> iterMethods = sClass.methodIterator();
+
+        if (!iterMethods.hasNext()) {
+            logger.warn("No methods found in class {}", sClass.getName());
+        }
 
         while (iterMethods.hasNext()) {
             SootMethod method = iterMethods.next();
