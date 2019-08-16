@@ -44,11 +44,7 @@ public class Util {
     }
 
     public static SootClass getOrLoadSootClass(String name) {
-        SootClass sootClass = Scene.v().getSootClassUnsafe(name);
-        if (sootClass == null) {
-            sootClass = Scene.v().loadClassAndSupport(name);
-        }
-        return sootClass;
+        return Scene.v().loadClassAndSupport(name);
     }
 
     public static void deleteDirectory(Path path) throws IOException {
