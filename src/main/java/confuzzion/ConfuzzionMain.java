@@ -12,6 +12,7 @@ import java.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import soot.G;
 import soot.Scene;
 
 import org.apache.commons.cli.CommandLine;
@@ -266,6 +267,7 @@ public class ConfuzzionMain {
     }
 
     public void startMutation(long mainloop_turn, long timeout, int stackLimit, boolean withJVM, String javahome, Path seedFolder, int constants_tries, String targets[]) {
+        G.reset();
         soot.options.Options.v().set_weak_map_structures(true);
         Scene.v().loadBasicClasses();
         Scene.v().extendSootClassPath(Util.getJarPath());
