@@ -186,6 +186,34 @@ public abstract class MethodMutation extends Mutation {
             return loc;
         }
 
+        // In case its the MethodHandle class use MethodHandles.Lookup nested class
+        if (clazz.getName().equals("java.lang.invoke.MethodHandle")) {
+            SootClass lookupClass = Util.getOrLoadSootClass("java.lang.invoke.MethodHandles$Lookup");
+            Local lookupLocal = rand.randLocal(body.getLocals(), lookupClass.getType());
+            if (lookupLocal == null) {
+                SootClass handlesClass = Util.getOrLoadSootClass("java.lang.invoke.MethodHandles");
+                SootMethod lookupMethod = handlesClass.getMethodByName("lookup");
+                lookupLocal = this.genMethodCall(body, null, lookupMethod);
+            }
+            Iterator<SootMethod> iterMethods = lookupClass.methodIterator();
+            ArrayList<SootMethod> methods = new ArrayList<SootMethod>();
+            while (iterMethods.hasNext()) {
+                SootMethod method = iterMethods.next();
+                if (method.isPublic() && !method.isConstructor() && method.getReturnType() == clazz.getType()) {
+                    methods.add(method);
+                }
+            }
+            return this.genMethodCall(body, lookupLocal, methods.get(rand.nextUint(methods.size())));
+        }
+
+        // To build a Lookup object, use a MethodHandles method called lookup()
+        if (clazz.getName().equals("java.lang.invoke.MethodHandle$Lookup")) {
+            SootClass handlesClass = Util.getOrLoadSootClass("java.lang.invoke.MethodHandles");
+            SootMethod lookupMethod = handlesClass.getMethodByName("lookup");
+            Local lookupLocal = this.genMethodCall(body, null, lookupMethod);
+            return lookupLocal;
+        }
+
         if (clazz.isEnum()) {
             ArrayList<SootField> staticFields = new ArrayList<SootField>();
             for (SootField field : clazz.getFields()) {
@@ -302,7 +330,7 @@ public abstract class MethodMutation extends Mutation {
     }
 
     // Generate or find parameters for the specified method call with the local
-    protected void genMethodCall(Body body,
+    protected Local genMethodCall(Body body,
                                  Local local,
                                  SootMethod method) {
         // Generate parameters
@@ -328,10 +356,12 @@ public abstract class MethodMutation extends Mutation {
         Type returnType = method.getReturnType();
         if (returnType.equals(VoidType.v())) {
             mutation.addUnit(Jimple.v().newInvokeStmt(methodCallExpr));
+            return null;
         } else {
             Local loc = Jimple.v().newLocal("local" + rand.nextIncrement(), returnType);
             mutation.addLocal(loc);
             mutation.addUnit(Jimple.v().newAssignStmt(loc, methodCallExpr));
+            return loc;
         }
     }
 }
