@@ -295,7 +295,6 @@ public class MutantGenerator {
                 if (locParam == null) {
                     // May happen if building the object is
                     // too difficult. Use null.
-                    //TODO: catch IllegalArgumentException
                     locParam = soot.jimple.NullConstant.v();
                 }
             }
