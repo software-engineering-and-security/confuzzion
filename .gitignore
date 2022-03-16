@@ -6,3 +6,4 @@ fuzz-results
 *.out
 *.log
 jdk8u/
+/.idea/

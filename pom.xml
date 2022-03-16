@@ -35,11 +35,13 @@
     </dependency>
 
     <!-- Soot used for Jimple to Class translation -->
+    <!-- https://mvnrepository.com/artifact/ca.mcgill.sable/soot -->
     <dependency>
       <groupId>ca.mcgill.sable</groupId>
       <artifactId>soot</artifactId>
-      <version>3.3.1-SNAPSHOT</version>
+      <version>4.1.0</version>
     </dependency>
+
 
     <!-- slf4j logger implementation using Simple logger -->
     <dependency>
