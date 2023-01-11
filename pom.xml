@@ -29,7 +29,7 @@
     <!-- Soot used for Jimple to Class translation -->
     <!-- https://mvnrepository.com/artifact/ca.mcgill.sable/soot -->
     <dependency>
-      <groupId>ca.mcgill.sable</groupId>
+      <groupId>org.soot-oss</groupId>
       <artifactId>soot</artifactId>
       <version>4.3.0</version>
     </dependency>
