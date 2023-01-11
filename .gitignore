@@ -5,3 +5,5 @@ fuzz-results
 **/*.class
 *.out
 *.log
+jdk8u/
+/.idea/
